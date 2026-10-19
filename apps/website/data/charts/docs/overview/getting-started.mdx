@@ -13,13 +13,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 ## 1. Install the package
 
-Download the next-suite candidate [`wsagency-radix2solid-charts-0.1.0-rc.3.tgz`](/packages/wsagency-radix2solid-charts-0.1.0-rc.3.tgz), then install it into your Solid 2 application. Candidate archives are available here; npm publication of rc.3 is not claimed.
+Charts is published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3). The npm `latest` tag still points to rc.2, so pin the exact version:
 
 ```bash
-pnpm add ./wsagency-radix2solid-charts-0.1.0-rc.3.tgz
+npm install -E @wsagency/radix2solid-charts@0.1.0-rc.3
 ```
 
-Charts requires `solid-js` and `@solidjs/web` `2.0.0-rc.15` with the matching `@solidjs/signals`, `@solidjs/compiler` and `@solidjs/babel-plugin` `2.0.0-rc.15`, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. It has no dependency on Themes; install [Themes](/themes/docs/overview/getting-started) as well if you want the token colors used below. The [runnable Charts sandbox](/sandboxes/charts-css-modules.tar.gz) is a complete application with the exact workspace overrides and release-age exceptions for these Solid versions.
+```bash
+pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.3
+```
+
+Charts requires `solid-js` and `@solidjs/web` `2.0.0-rc.15` with the matching `@solidjs/signals`, `@solidjs/compiler` and `@solidjs/babel-plugin` `2.0.0-rc.15`, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. It has no dependency on Themes; install [Themes](/themes/docs/overview/getting-started) as well if you want the token colors used below. The [runnable Charts sandbox](/sandboxes/charts-css-modules.tar.gz) is a complete application with exact npm package versions, the RC15 workspace overrides and release-age exceptions for these Solid versions.
 
 The earlier published rc.2 lacks the next-suite Legend, XAxis and Sankey APIs. To try those APIs with the full pinned setup, download and extract the runnable sandbox above, run `pnpm install`, then `pnpm dev`. To set up your own application, use the [Solid RC15 workspace overrides](/themes/docs/overview/getting-started); Charts itself needs no Primitives override.
 

@@ -1,0 +1,36 @@
+---
+metaTitle: Calendar
+metaDescription: A styled Themes compound Calendar using the native Gregorian calendar state and keyboard model.
+---
+import { Calendar } from "@wsagency/radix2solid-themes";
+
+# Calendar
+
+<Description>The Themes Calendar component styles the native Primitives Calendar without creating a second state or accessibility implementation.</Description>
+
+```tsx live=true
+
+() => <Calendar.Root size="2" color="indigo" radius="large" variant="surface" today="2026-10-19" defaultViewMonth="2026-10" aria-label="Choose a date">
+  <Calendar.Header>
+    <Calendar.PrevTrigger aria-label="Previous month">‹</Calendar.PrevTrigger>
+    <Calendar.Heading />
+    <Calendar.NextTrigger aria-label="Next month">›</Calendar.NextTrigger>
+  </Calendar.Header>
+  <Calendar.Grid>{state => <>
+    <Calendar.Row>{state.weekdays.map(day => <Calendar.HeaderCell weekday={day.index}>{day.shortLabel}</Calendar.HeaderCell>)}</Calendar.Row>
+    {state.weeks.map(week => <Calendar.Row>{week.map(day => day
+      ? <Calendar.Cell date={day.date}><Calendar.Day date={day.date}>{day.date.slice(-2)}</Calendar.Day></Calendar.Cell>
+      : <span role="gridcell" aria-disabled="true" />)}</Calendar.Row>)}
+  </>}</Calendar.Grid>
+</Calendar.Root>
+```
+
+This compound wrapper is a native Solid project extension, not an official Radix React component, and is available only in the unpublished local candidate. The public parts, refs, scopes, selection and navigation state remain those of [`Calendar` in Primitives](/primitives/docs/components/calendar). The wrapper adds Themes styling; it does not add range selection, time, other calendar systems, or a second focus engine.
+
+Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+
+## Styling props
+
+`Root` accepts `size` (`1`, `2`, or `3`), `color`, `radius`, and `variant` (`surface`, `classic`, or `soft`) in addition to the Calendar Root API. Theme props affect presentation; date value, visible month, bounds, locale, week start, direction, disabled/read-only behavior and explicit `today` follow the primitive contract. It uses the current Themes tokens/styles and inherits the surrounding Theme configuration. Other parts preserve native part props and forwarded refs.
+
+Use an explicit `today` and canonical `YYYY-MM-DD` date-only values. Control `value` and `viewMonth` separately when the parent may accept one proposal and refuse the other. Keep each weekday header and week in its `Calendar.Row`, preserving domain-edge `null` positions with inert `role="gridcell" aria-disabled="true"` placeholders rather than invented dates. Localized day labels, six-week grid, RTL keyboard behavior, inclusive bounds, and accessible grid relationships are provided by the native Calendar implementation. See the [Primitives API and keyboard reference](/primitives/docs/components/calendar); this recipe changes visual presentation only.

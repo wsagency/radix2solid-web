@@ -1,0 +1,35 @@
+---
+metaTitle: FileDrop
+metaDescription: A styled Themes drop surface backed by one native input and accepted File state.
+---
+import { FileDrop } from "@wsagency/radix2solid-themes";
+
+# FileDrop
+
+<Description>A Themes-styled drop target and browse control that keep the native file input and accepted file array as the sole selection authority.</Description>
+
+```tsx live=true
+
+() => <FileDrop.Root size="2" color="indigo" radius="large" variant="surface" name="attachments" accept=".pdf,image/*" multiple required>
+  <FileDrop.Input aria-label="Attachments" />
+  <p>Drop files here or browse for attachments.</p>
+  <FileDrop.Trigger aria-label="Browse attachments">Browse files</FileDrop.Trigger>
+</FileDrop.Root>
+```
+
+This wrapper is a native Solid project extension available only in the unpublished local candidate, not an official Radix React component. It preserves the [`FileDrop` Primitives parts and state contract](/primitives/docs/components/file-drop): one Root, exactly one real Input, one Trigger for that input, accepted `readonly File[]`, and the same form and whole-batch UX policy. It adds visual styling, not another chooser, upload service or file-validation boundary.
+
+Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+
+## Styling props
+
+`Root` adds `size` (`1`, `2`, or `3`), `color`, `radius`, and `variant` (`surface`, `soft`, or `outline`). All parts preserve native props and refs. Use one clear accessible name for the Input and a separate accessible name for the Trigger. Keep instructions and rejection messages visible; drag and drop is an enhancement, not the only interaction.
+
+The Root preserves the Primitives drag and disabled styling hooks:
+
+| Attribute | Value / condition |
+| --- | --- |
+| `[data-dragging]` | `"true"` while Root tracks a file drag; `"false"` otherwise. The attribute is always present. |
+| `[data-disabled]` | Present as an empty attribute when Root is disabled; absent otherwise. |
+
+The Root's controlled `value` remains the accepted selection. Application-side append, delayed adoption/refusal, and remove-one behavior must be implemented by passing accepted arrays back to the controlled Root. `multiple`, `accept`, `required`, `disabled`, `name`, and external `form` ownership keep the native behavior described in the Primitives reference. An `accept` hint is not security validation; validate uploaded bytes and authorization on your server. The wrapper never uploads or inspects file content.

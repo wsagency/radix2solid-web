@@ -15,11 +15,18 @@ import { AvatarIconFallback } from "../components/avatar-icon-fallback";
 import { TabNavDemo } from "../components/tab-nav-demo";
 import { chartFamilies } from "../components/chart-previews";
 import { HeroCodeBlock } from "../components/hero-code-block";
+import CalendarDemo from "../demos/calendar";
+import DatePickerDemo from "../demos/date-picker";
+import FileDropDemo from "../demos/file-drop";
+import { Calendar as StyledCalendar, DatePicker as StyledDatePicker, FileDrop as StyledFileDrop } from "@wsagency/radix2solid-themes";
 import ComboboxDemo from "../demos/combobox";
 import CommandDemo from "../demos/command";
 import TreeDemo from "../demos/tree";
 import SplitterDemo from "../demos/splitter";
 import ChartsDemo from "../demos/charts";
+const calendarSources = import.meta.glob<string>("../demos/calendar/**/*.{tsx,css,cjs}", { query: "?raw", import: "default", eager: true });
+const datePickerSources = import.meta.glob<string>("../demos/date-picker/**/*.{tsx,css,cjs}", { query: "?raw", import: "default", eager: true });
+const fileDropSources = import.meta.glob<string>("../demos/file-drop/**/*.{tsx,css,cjs}", { query: "?raw", import: "default", eager: true });
 // "custom" needs a consumer-supplied palette, so the colour grids show only the built-in scales.
 const accentColors = themeAccentColors.filter((color): color is Exclude<typeof color, "custom"> => color !== "custom");
 const chartSources = import.meta.glob<string>("../demos/charts/**/*.{tsx,css,cjs}", {
@@ -4337,6 +4344,52 @@ export default function ComponentsPage() {
 							</Flex>
 						</PlaygroundSection>
 
+            <PlaygroundSection>
+              <PlaygroundSectionTitle id="calendar" href="/themes/docs/components/calendar">Calendar</PlaygroundSectionTitle>
+              <Card class={styles.NativeRecipe}><CalendarDemo /></Card>
+              <Card class={styles.NativeRecipe}>
+                <StyledCalendar.Root size="2" color="indigo" radius="large" variant="surface" today="2026-10-19" defaultViewMonth="2026-10" aria-label="Styled calendar">
+                  <StyledCalendar.Header><StyledCalendar.PrevTrigger aria-label="Previous month">‹</StyledCalendar.PrevTrigger><StyledCalendar.Heading/><StyledCalendar.NextTrigger aria-label="Next month">›</StyledCalendar.NextTrigger></StyledCalendar.Header>
+                  <StyledCalendar.Grid>{state => <>
+                    <StyledCalendar.Row>{state.weekdays.map(day => <StyledCalendar.HeaderCell weekday={day.index}>{day.shortLabel}</StyledCalendar.HeaderCell>)}</StyledCalendar.Row>
+                    {state.weeks.map(week => <StyledCalendar.Row>{week.map(day => day
+                      ? <StyledCalendar.Cell date={day.date}><StyledCalendar.Day date={day.date}>{day.date.slice(-2)}</StyledCalendar.Day></StyledCalendar.Cell>
+                      : <span role="gridcell" aria-disabled="true" />)}</StyledCalendar.Row>)}
+                  </>}</StyledCalendar.Grid>
+                </StyledCalendar.Root>
+              </Card>
+              <HeroCodeBlock folder="Calendar" sources={calendarSources} />
+            </PlaygroundSection>
+            <PlaygroundSection>
+              <PlaygroundSectionTitle id="date-picker" href="/themes/docs/components/date-picker">DatePicker</PlaygroundSectionTitle>
+              <Card class={styles.NativeRecipe}><DatePickerDemo /></Card>
+              <Card class={styles.NativeRecipe}>
+                <StyledDatePicker.Root size="2" color="indigo" radius="large" variant="surface" name="theme-appointment" today="2026-10-19" defaultViewMonth="2026-10">
+                  <StyledDatePicker.Trigger aria-label="Choose styled appointment date"><StyledDatePicker.Value placeholder="Choose a date"/></StyledDatePicker.Trigger>
+                  <StyledDatePicker.Portal><StyledDatePicker.Content>
+                    <StyledDatePicker.Title>Choose an appointment date</StyledDatePicker.Title>
+                    <StyledDatePicker.Description>Select one available day.</StyledDatePicker.Description>
+                    <StyledDatePicker.Calendar>
+                      <StyledCalendar.Header><StyledCalendar.PrevTrigger aria-label="Previous month">‹</StyledCalendar.PrevTrigger><StyledCalendar.Heading/><StyledCalendar.NextTrigger aria-label="Next month">›</StyledCalendar.NextTrigger></StyledCalendar.Header>
+                      <StyledCalendar.Grid>{state => <>
+                        <StyledCalendar.Row>{state.weekdays.map(day => <StyledCalendar.HeaderCell weekday={day.index}>{day.shortLabel}</StyledCalendar.HeaderCell>)}</StyledCalendar.Row>
+                        {state.weeks.map(week => <StyledCalendar.Row>{week.map(day => day
+                          ? <StyledCalendar.Cell date={day.date}><StyledCalendar.Day date={day.date}>{day.date.slice(-2)}</StyledCalendar.Day></StyledCalendar.Cell>
+                          : <span role="gridcell" aria-disabled="true" />)}</StyledCalendar.Row>)}
+                      </>}</StyledCalendar.Grid>
+                    </StyledDatePicker.Calendar>
+                  </StyledDatePicker.Content></StyledDatePicker.Portal>
+                  <StyledDatePicker.FormControl aria-label="Styled appointment date"/>
+                </StyledDatePicker.Root>
+              </Card>
+              <HeroCodeBlock folder="DatePicker" sources={datePickerSources} />
+            </PlaygroundSection>
+            <PlaygroundSection>
+              <PlaygroundSectionTitle id="file-drop" href="/themes/docs/components/file-drop">FileDrop</PlaygroundSectionTitle>
+              <Card class={styles.NativeRecipe}><FileDropDemo /></Card>
+              <Card class={styles.NativeRecipe}><StyledFileDrop.Root size="2" color="indigo" radius="large" variant="surface" name="theme-attachments" accept=".txt,text/plain" multiple><StyledFileDrop.Input aria-label="Styled attachments"/><p>Drop plain text files here or browse.</p><StyledFileDrop.Trigger aria-label="Browse styled files">Browse files</StyledFileDrop.Trigger></StyledFileDrop.Root></Card>
+              <HeroCodeBlock folder="FileDrop" sources={fileDropSources} />
+            </PlaygroundSection>
             <PlaygroundSection>
               <PlaygroundSectionTitle id="combobox" href="/themes/docs/recipes/combobox">Combobox</PlaygroundSectionTitle>
               <Card class={styles.NativeRecipe}><ComboboxDemo /></Card>

@@ -1,0 +1,98 @@
+---
+metaTitle: DatePicker
+metaDescription: Accessible date-only selection with an inline calendar, popup and native form validity.
+---
+
+import DatePickerDemo from "../../../../src/demos/date-picker";
+
+# DatePicker
+
+<Description>A date-only input composed from a native popover and Calendar state, with an explicitly managed native form control.</Description>
+
+<HeroContainer><DatePickerDemo /></HeroContainer>
+<HeroCodeBlock folder="DatePicker" />
+
+DatePicker is a native Solid 2 project extension, not an official Radix React port. Its APIs are part of the unpublished local candidate and are not available in the published `0.1.0-rc.3` package. See the [Themes DatePicker recipe](/themes/docs/components/date-picker) for the styled compound component.
+
+Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+
+## Imports and anatomy
+
+```tsx
+import { Calendar, DatePicker } from "@wsagency/radix2solid-primitives";
+import { Form } from "@wsagency/radix2solid-primitives";
+
+export default () => <Form.Root>
+  <DatePicker.Root name="appointment" required today="2026-10-19" defaultViewMonth="2026-10">
+    <DatePicker.Trigger aria-label="Choose appointment date"><DatePicker.Value placeholder="Choose a date" /></DatePicker.Trigger>
+    <DatePicker.Clear aria-label="Clear date">Clear</DatePicker.Clear>
+    <DatePicker.Portal><DatePicker.Content style="box-sizing: border-box; max-block-size: min(var(--radix-popover-content-available-height, 100dvh), calc(100dvh - 1rem)); overflow: auto">
+      <DatePicker.Title>Choose a date</DatePicker.Title>
+      <DatePicker.Description>Select one available day.</DatePicker.Description>
+      <DatePicker.Calendar>
+        <Calendar.Header><Calendar.PrevTrigger aria-label="Previous month">Previous</Calendar.PrevTrigger><Calendar.Heading/><Calendar.NextTrigger aria-label="Next month">Next</Calendar.NextTrigger></Calendar.Header>
+        <Calendar.Grid>{state => <>
+          <Calendar.Row>{state.weekdays.map(day => <Calendar.HeaderCell weekday={day.index}>{day.shortLabel}</Calendar.HeaderCell>)}</Calendar.Row>
+          {state.weeks.map(week => <Calendar.Row>{week.map(day => day
+            ? <Calendar.Cell date={day.date}><Calendar.Day date={day.date}>{day.date.slice(-2)}</Calendar.Day></Calendar.Cell>
+            : <span role="gridcell" aria-disabled="true" />)}</Calendar.Row>)}
+        </>}</Calendar.Grid>
+      </DatePicker.Calendar>
+    </DatePicker.Content></DatePicker.Portal>
+    <DatePicker.FormControl aria-label="Appointment date" />
+  </DatePicker.Root>
+</Form.Root>;
+```
+
+`DatePicker.Calendar` provides the DatePicker's existing selection and view-month state to the nested `Calendar` parts. Keep weekday headers and each week in its own `Calendar.Row`; render `null` domain-edge positions as inert `role="gridcell" aria-disabled="true"` padding within the week row, never as a synthetic date. Do not nest a second `Calendar.Root`: that would create an independent calendar state. An inline calendar uses the same `DatePicker.Calendar` composition without the Popover parts. For a plain native typing alternative, use a labeled `<input type="date">` and own its parsing, bounds, and form behavior directly.
+
+## Root API
+
+`DatePicker.Root` accepts the Calendar state options: controlled/uncontrolled `value` and `viewMonth`, their change callbacks, required explicit `today`, `locale`, `weekStartsOn`, `dir`, inclusive `min`/`max`, `isDateUnavailable`, `disabled`, and `readOnly`. Values use the Gregorian date-only `YYYY-MM-DD` contract and month `YYYY-MM`; no current clock, local timezone, or locale is inferred. An uncontrolled visible month initially uses `defaultViewMonth`, else the month of the initial value, else explicit `today`. It also accepts `open`/`defaultOpen` and `onOpenChange` for the popup state, `modal` for the underlying Popover behavior, and `name`, `form`, and `required` for its single native `FormControl`.
+
+| Part | Responsibility |
+| --- | --- |
+| `Root` | Coordinates Calendar selection/month state, Popover open state and native date-form state. |
+| `Trigger`, `Value` | Named native trigger and formatted accepted date or consumer placeholder. |
+| `Portal`, `Content` | Existing Popover portal and positioned content. Content hosts the dialog title/description and calendar. |
+| `Title`, `Description`, `Close` | Accessible popup naming, description, and optional close button. |
+| `Clear` | Requests a null date; disabled/read-only state prevents mutation. |
+| `Calendar` | Shares the DatePicker's calendar state with nested `Calendar` parts. |
+| `FormControl` | Exactly one visually hidden native `input[type=date]`; owns canonical value, name, form, bounds and browser validity. |
+
+The Root's `name`, `form`, `required`, `min`, `max`, and disabled state are canonical. Do not assign a second name/form to the form-control target. Trigger, value, clear, title, description, and calendar parts are native part namespaces; use `Calendar.*` parts inside `DatePicker.Calendar`.
+
+## Native forms and validity ownership
+
+`FormControl` is the one successful native date field and focus target. It projects canonical ISO date values and native min/max/required/disabled constraints. A selected day proposes a new date; the visible formatted trigger text is presentation only. Ordinary submit and `requestSubmit()` validate the bridge; clearing a required value leaves the field invalid. Root `form` associates the bridge with an external form by ID.
+
+When using the managed primitive `Form`, compose exactly one `Form.Control` with the DatePicker's native bridge:
+```tsx
+<Form.Root>
+  <Form.Field name="appointment">
+    <DatePicker.Root name="appointment" required today="2026-10-19">
+      <DatePicker.Trigger aria-label="Choose appointment date"><DatePicker.Value placeholder="Choose a date" /></DatePicker.Trigger>
+      <Form.Control name="appointment" asChild>{target => target(DatePicker.FormControl, {
+        "aria-label": "Appointment date"
+      })}</Form.Control>
+      <Form.Message match="valueMissing">Choose an appointment date.</Form.Message>
+    </DatePicker.Root>
+  </Form.Field>
+</Form.Root>
+```
+
+The matching `Form.Control` provides the sole managed custom-validity writer. Keep Root and Form.Control `name` and external `form` associations consistent. Do not also call `setCustomValidity()` from application effects or attach a second `Form.Control` to that DatePicker. Form's existing server-error, validity-message and reset behavior remains authoritative; a DatePicker callback is a proposal, not proof that a controlled parent accepted it.
+
+Reset requests the initially captured value. A controlled parent may refuse that request; render the accepted props, do not force a visual/native value independently. Accepted changes are reflected into the bridge and produce the component's input/change synchronization. This is client-side validation, not server authorization.
+
+## Controlled state and interaction
+
+Selection, visible month, and open state are independent controlled channels. A day can request a value and close the popup even when the parent rejects the value; the trigger and form field continue to show accepted state. The month navigation callbacks do not commit dates. Clear requests null. Bounds, disabled, read-only, unavailable dates and the all-unavailable case follow Calendar rules. `readOnly` prevents selection/clear while preserving the selected display; `disabled` also disables the trigger and native form participation.
+
+The native text-date control is the canonical form value. The calendar is a date-only picker, not range selection, time selection, alternate calendars, or a month/year chooser.
+
+## Accessibility, locale, direction and SSR
+
+Provide a specific accessible name on each trigger; do not rely on placeholder text. Give popup content a `Title`, and describe instructions with `Description`. The nested grid uses Calendar's live localized heading, weekday full names, date labels, and keyboard navigation. `dir="rtl"` and `weekStartsOn` affect the calendar layout/keyboard behavior while leaving the accepted ISO value stable. Localized display uses the explicit locale and UTC-safe date formatting, not the browser's ambient timezone.
+
+Supply explicit `today` and deterministic initial month/value for stable server rendering. The Root's trigger and `DatePicker.FormControl` canonical date/field metadata render on the server without layout measurements. Preserve the native `DatePicker.Portal` behavior: its content is not in server HTML and mounts after hydration. If an initially open popup must appear in SSR markup and preserve node identity through hydration, compose `DatePicker.Content` inline under `Root` and omit the optional `DatePicker.Portal` on both server and client; do not add an environment-conditional wrapper or SSR portal fallback. The separate labeled native `<input type="date">` alternative remains a progressive-enhancement option for native typing and form submission, not a competing value source alongside DatePicker. Native browser date UI and focus behavior vary by platform, and automated browser assertions are not assistive-technology certification.

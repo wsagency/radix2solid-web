@@ -9,9 +9,9 @@ metaDescription: Charts release notes.
 
 <Description>Charts release notes.</Description>
 
-## 0.1.0-rc.3 — next-suite candidate
+## 0.1.0-rc.3 — next-suite release candidate
 
-This site's downloadable candidate is not a claim of npm publication. Use the [candidate archive setup](/charts/docs/overview/getting-started), not a registry command for an unverified version.
+Charts is published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3). Use the exact-version [npm and pnpm installation commands](/charts/docs/overview/getting-started).
 
 - Selected Recharts 3.10.1 adaptations **A1–A13**, not the full release: retained controlled Brush drag/data behavior; clearing stale active bars; Sankey accessibility; Legend placement and offset; automatic XAxis height; Pie label radii; stacked all-null Area connections; tooltip payload fallback; floating-point band sizes; polar wrap-around tooltips; custom Label positions; stable rendered-tick reporting; and bar gaps with clamped maximum bar size.
 - Public APIs: `Legend position` and `offset` with exported `CartesianPosition`, default `layout="auto"`; `XAxis height="auto"`; and `Sankey title`, `desc`, and `accessibilityLayer`. See the live [LineChart](/charts/docs/components/line-chart), [BarChart](/charts/docs/components/bar-chart), [Sankey](/charts/docs/components/sankey), and [playground](/themes/playground#charts) examples.
@@ -19,14 +19,14 @@ This site's downloadable candidate is not a claim of npm publication. Use the [c
 - Controlled Brush intentionally retains a dragged slide after mouseup even if the parent leaves `startIndex` and `endIndex` unchanged. The new Primitives' strict controlled-refusal rule does not apply to this imported Charts behavior.
 - Position-set legends using the default mount have wrapper-owned server HTML and a zero measured box retained by first-client styles before browser measurement. No-position and explicit custom-portal legends keep their existing DOM-only path. Auto XAxis uses a matching 30px server/first-client fallback, then measures ticks and string labels after mount. Requested numeric heights and tick positions are unchanged, but shared server plot clips are corrected after axis registration, so SSR markup is not byte-identical. These measured layouts are not server-final; see the bounded [SSR guidance](/charts/docs/guides/responsive-and-ssr).
 - Imported solid-recharts/Recharts identities, native Solid 2 adaptations, D3 dependency versions and license notices are preserved. The package's `UPSTREAM.md` and `upstream.json` carry the per-change status and regression evidence; the release as a whole remains tracked, not fully ported.
-- Download: [`wsagency-radix2solid-charts-0.1.0-rc.3.tgz`](/packages/wsagency-radix2solid-charts-0.1.0-rc.3.tgz).
+- Published package: [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3).
 
 ## 0.1.0-rc.2
 
-_Published on npm as [`@wsagency/radix2solid-charts@0.1.0-rc.2`](https://www.npmjs.com/package/@wsagency/radix2solid-charts)._
+_Historical published package: [@wsagency/radix2solid-charts@0.1.0-rc.2](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.2)._
 
 - First Charts release in Radix2Solid: source copy of solid-recharts `2.0.0-beta.1` (`b1f9c67`), tracking Recharts `3.9.2` (`b3451050`). Recharts `3.10.1` is tracked but not ported.
 - Built for `solid-js` and `@solidjs/web` `2.0.0-rc.15` with `@solidjs/vite-plugin` `3.0.0-next.50`; `solid-js` and `@solidjs/web` are exact peer dependencies.
 - Fixed-size charts and `ResponsiveContainer` with `initialDimension` render SVG on the server; the root SVG of a fixed-size chart hydrates in place. A bounded Cartesian recipe is regression-tested to keep the same tick positions and series geometry across hydration: axes before series, gutters reserved in `margin` with zero-size axes, a `band` category scale, an explicit value `domain` with `allowDataOverflow`, and `interval={0}` on both axes. Automatic domains and axis sizes, including stacked series, are not supported on the server: their server HTML is wrong until the client redraws it ([recipe](/charts/docs/guides/responsive-and-ssr#server-geometry-needs-explicit-axes)).
 - `LICENSE` keeps the solid-recharts and Recharts MIT notices; `NOTICE` carries the ISC licenses of the external D3 dependencies (`d3-scale`, `d3-shape` and the packages they resolve).
-- Historical published package: [`@wsagency/radix2solid-charts@0.1.0-rc.2`](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.2). The download above is the newer candidate, not this historical version.
+- Historical published package: [@wsagency/radix2solid-charts@0.1.0-rc.2](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.2). The newer rc.3 release candidate is published separately above.

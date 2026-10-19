@@ -80,7 +80,7 @@ export const IconsHero = () => {
 									Open in Figma
 								</>
               })}</Button>
-							<input readonly onClick={event => event.currentTarget.select()} value="pnpm add ./wsagency-radix2solid-icons-0.1.0-rc.3.tgz" style={{
+							<input readonly onClick={event => event.currentTarget.select()} value="pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.3" style={{
               "text-align": "center",
               "min-height": "40px",
               "min-width": 0 as const,
@@ -98,7 +98,7 @@ export const IconsHero = () => {
               "box-shadow": "0 0 0 1px var(--gray-a6)",
               "width": "44ch",
               "max-width": "100%"
-            }} aria-label="Install downloaded native icons candidate" class={styles.InstallCommand} />
+            }} aria-label="Install native icons package from npm" class={styles.InstallCommand} />
 						</Flex>
 					</Container>
 				</Section>

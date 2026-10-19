@@ -2,13 +2,26 @@
 
 The independent, unofficial native **Solid 2** documentation website for [Radix2Solid](https://github.com/wsagency/radix2solid). This is not a WorkOS product. Original Radix documentation, designs, blog posts and case studies keep their attribution and historical context; they do not endorse this fork.
 
-The site preserves 137 original MDX documents and 151 original routes, and adds 31 native-only documents and 32 native-only routes for Charts, four new Primitives families and Themes recipes: 168 documents, 183 routes plus 404, 257 demo source files and 110 downloadable runnable sandboxes. It includes native interactive examples, API tables, Markdown negotiation, heading-aware search, redirects, the Themes playground and historical marketing/example layouts. Website source and issues belong to [wsagency/radix2solid-web](https://github.com/wsagency/radix2solid-web); native package issues belong to [wsagency/radix2solid](https://github.com/wsagency/radix2solid).
+The site preserves 137 original MDX documents and 151 original routes, and adds 37 native-only documents and 38 native-only routes for Charts, seven Primitives API families and Themes additions: 174 documents, 189 routes plus 404, 278 demo source files and 119 downloadable runnable sandboxes. Calendar, DatePicker and FileDrop are local candidate APIs: their new Primitives and Themes exports are not available from published npm `0.1.0-rc.3`; their nine style-variant archives bundle the actual pinned local packages. The site also includes native interactive examples, Markdown negotiation, heading-aware search, redirects, the Themes playground and historical marketing/example layouts. Website source and issues belong to [wsagency/radix2solid-web](https://github.com/wsagency/radix2solid-web); native package issues belong to [wsagency/radix2solid](https://github.com/wsagency/radix2solid).
 
-## Next-suite candidate packages
+## Published next-suite release candidate
 
-This site documents **0.1.0-rc.3 candidate archives** for Primitives, Themes, Icons, Charts and the optional Icons Extra package. npm publication of rc.3 is not claimed. The earlier published rc.2 packages lack the new families and chart APIs; do not substitute them for the downloaded candidate.
+All five native packages are published on npm as `0.1.0-rc.3` (release candidate, dist-tag `next`):
 
-Download the five `/packages/wsagency-radix2solid-<package>-0.1.0-rc.3.tgz` archives from the site into your application directory. Pin the complete Solid RC15 graph and Themes' transitive Primitives dependency in `pnpm-workspace.yaml`:
+| Package | npm |
+|---|---|
+| Primitives | [@wsagency/radix2solid-primitives@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.3) |
+| Themes | [@wsagency/radix2solid-themes@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.3) |
+| Icons | [@wsagency/radix2solid-icons@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.3) |
+| Charts | [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3) |
+| Icons Extra | [@wsagency/radix2solid-icons-extra@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.3) |
+
+Always pin `@0.1.0-rc.3`; do not use a bare package name or `@latest`. The `latest` tag still points to rc.1 for Primitives, Icons, and Themes and rc.2 for Charts. Icons Extra's `latest` is rc.3, but pin it explicitly as well.
+The published rc.3 installation above remains correct for those published APIs. Calendar, DatePicker and FileDrop are unpublished local-candidate exports and are not installed by the rc.3 commands; use their candidate sandbox downloads only after the web build has packed the exact pinned Primitives and Themes tarballs.
+
+Each of the nine local candidate archives is generated from the reviewed, committed green Primitives/Themes source at exact candidate SHA `8bb3d8af0b3509638326afb65be22099e3e02cca`. The archives bundle actual packed Primitives and Themes tarballs under `vendor/`, with Themes' Primitives override resolving to the same bundled file. Download the runnable archives from their playground source viewers, extract and run `pnpm install` and `pnpm build`. The generated `CANDIDATE.md` records the source commit. These are local candidate APIs and are not available from npm rc.3.
+
+Install the packages you need. Themes depends on Primitives, so keep its transitive dependency on the same exact version:
 
 ```yaml
 overrides:
@@ -17,16 +30,22 @@ overrides:
   '@solidjs/signals': 2.0.0-rc.15
   '@solidjs/compiler': 2.0.0-rc.15
   '@solidjs/babel-plugin': 2.0.0-rc.15
-  '@wsagency/radix2solid-primitives': file:./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz
+  '@wsagency/radix2solid-primitives': 0.1.0-rc.3
 ```
 
 ```sh
-pnpm add ./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz ./wsagency-radix2solid-themes-0.1.0-rc.3.tgz ./wsagency-radix2solid-icons-0.1.0-rc.3.tgz ./wsagency-radix2solid-charts-0.1.0-rc.3.tgz ./wsagency-radix2solid-icons-extra-0.1.0-rc.3.tgz
+pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3 @wsagency/radix2solid-icons@0.1.0-rc.3 @wsagency/radix2solid-charts@0.1.0-rc.3 @wsagency/radix2solid-icons-extra@0.1.0-rc.3
+npm install -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3 @wsagency/radix2solid-icons@0.1.0-rc.3 @wsagency/radix2solid-charts@0.1.0-rc.3 @wsagency/radix2solid-icons-extra@0.1.0-rc.3
 ```
 
-Use `@solidjs/vite-plugin@3.0.0-next.50`. The runnable downloads include complete pinned tooling and licenses. Icons Extra is optional: its two native folder icons remain separate from the original 332.
+The complete Solid 2 RC15 runtime/compiler tuple and Vite plugin are exact:
 
-Maintainers own npm permissions, first publication of Icons Extra, Trusted Publisher configuration, tokens and tags. This website change does not configure publishers, publish packages or move tags.
+```sh
+pnpm add -E solid-js@2.0.0-rc.15 @solidjs/web@2.0.0-rc.15 @solidjs/signals@2.0.0-rc.15 @solidjs/compiler@2.0.0-rc.15 @solidjs/babel-plugin@2.0.0-rc.15
+pnpm add -D -E @solidjs/vite-plugin@3.0.0-next.50 vite@8.3.3
+```
+
+Icons Extra remains optional: its two native folder icons are separate from the original 332. Existing sandboxes use published packages; the nine Calendar, DatePicker and FileDrop style variants include the exact packed local candidate Primitives and Themes distributions, full pinned source SHA instructions, exact tooling and licenses. This website does not publish those local candidate APIs to npm.
 
 
 ## Created for WS Agency
@@ -89,4 +108,4 @@ Preview binds only to `127.0.0.1`, on port 4149 unless `WEBSITE_PREVIEW_PORT` ov
 
 Native fork changes: MIT, Copyright (c) 2026 Radix2Solid contributors; see [LICENSE](LICENSE). Original website software keeps its full WorkOS MIT text in [WEBSITE-LICENSE.txt](apps/website/public/WEBSITE-LICENSE.txt). Package tarballs preserve the library's complete original and contributor notices, including reused released Colors CSS. Charts keeps the solid-recharts/Recharts MIT notices in `LICENSE` and verbatim resolved D3 ISC licenses in `NOTICE`. The separate Icons Extra package carries its own artwork provenance and license. `NOTICE.txt` reproduces the licenses of all five Radix2Solid packages and other code bundled into the site's JavaScript; `check:export` checks the actual archives and runtime graph. Font copyright/OFL texts and provenance hashes are in `apps/website/public/fonts/`.
 
-[NOTICE.txt](apps/website/public/NOTICE.txt) discloses historical trademarks, portraits, endorsements and externally hosted images. Software licensing does not grant trademark/likeness/deployment rights. The site is indexable. The `radix2solid.com` hostname and a `www` redirect to it are configured in Cloudflare, not in this repository; this repository does not claim the site is published. GitHub Actions deploys the `out/` that `pnpm check` validated to a Cloudflare Worker, only for pushes to `main` that are still the branch head, so publication waits for a green `pnpm check`. No analytics, npm publication or GitHub Release upload is configured or claimed. Generated exports, downloads, dependencies, the ignored library checkout and private build artifacts are not committed.
+[NOTICE.txt](apps/website/public/NOTICE.txt) discloses historical trademarks, portraits, endorsements and externally hosted images. Software licensing does not grant trademark/likeness/deployment rights. The site is indexable. The `radix2solid.com` hostname and a `www` redirect to it are configured in Cloudflare, not in this repository; this repository does not claim the site is published. GitHub Actions deploys the `out/` that `pnpm check` validated to a Cloudflare Worker, only for pushes to `main` that are still the branch head, so publication waits for a green `pnpm check`. No analytics or GitHub Release upload is configured. The five native packages are published independently on npm; this website repository does not configure npm package publishing. Generated exports, downloads, dependencies, the ignored library checkout and private build artifacts are not committed.

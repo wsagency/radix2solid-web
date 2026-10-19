@@ -1,0 +1,9 @@
+import { createSignal } from "solid-js";
+import { Calendar } from "@wsagency/radix2solid-primitives";
+import "./styles.css";
+export default function CalendarDemo() {
+  const [value, setValue] = createSignal<Calendar.DateValue | null>(null);
+  const [rtl, setRtl] = createSignal(false);
+  const [weekStartsOn, setWeekStartsOn] = createSignal<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
+  return <section class="calendar-demo" aria-label="Calendar demonstration"><Calendar.Root class="calendar" aria-label="Choose a date" value={value()} onValueChange={setValue} today="2026-10-19" defaultViewMonth="2026-10" locale={rtl() ? "ar-EG" : "en-US"} weekStartsOn={weekStartsOn()} dir={rtl() ? "rtl" : "ltr"}><Calendar.Header class="calendar-header"><Calendar.PrevTrigger class="calendar-control" aria-label="Previous month">‹</Calendar.PrevTrigger><Calendar.Heading class="calendar-heading"/><Calendar.NextTrigger class="calendar-control" aria-label="Next month">›</Calendar.NextTrigger></Calendar.Header><Calendar.Grid class="calendar-grid">{state => <><Calendar.Row class="calendar-row">{state.weekdays.map(day => <Calendar.HeaderCell class="calendar-weekday" weekday={day.index}>{day.shortLabel}</Calendar.HeaderCell>)}</Calendar.Row>{state.weeks.map(week => <Calendar.Row class="calendar-row">{week.map(item => item ? <Calendar.Cell class="calendar-cell" date={item.date}><Calendar.Day class="calendar-day" date={item.date}>{item.date.slice(-2).replace(/^0/, "")}</Calendar.Day></Calendar.Cell> : <span class="calendar-cell" role="gridcell" aria-disabled="true" />)}</Calendar.Row>)}</>}</Calendar.Grid></Calendar.Root><button class="calendar-control" type="button" onClick={() => { setRtl(value => !value); setWeekStartsOn(value => value === 0 ? 1 : 0); }}>Change locale, week start and direction</button><div class="calendar-status" aria-label="Accepted date">{value() ?? "No date selected"}</div></section>;
+}

@@ -19,7 +19,7 @@ Getting up and running is quick and easy.
 
 ### 1. Install Radix Themes
 
-Download the next-suite candidate [Primitives archive](/packages/wsagency-radix2solid-primitives-0.1.0-rc.3.tgz) and [Themes archive](/packages/wsagency-radix2solid-themes-0.1.0-rc.3.tgz) into your application directory. These are local `0.1.0-rc.3` candidates, not a claim of npm publication. Themes depends on Primitives, so map that transitive dependency to the same local archive. The packages require `solid-js` and `@solidjs/web` `2.0.0-rc.15` with matching signals/compiler/babel packages, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. With pnpm, add to `pnpm-workspace.yaml`:
+Primitives and Themes are published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): [Primitives](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.3) and [Themes](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.3). These are release candidates, not stable releases. The `latest` tag still points to rc.1 for both packages; use the exact-version install commands below. Themes depends on Primitives, so map its transitive dependency to the same npm version. The packages require `solid-js` and `@solidjs/web` `2.0.0-rc.15` with matching signals/compiler/babel packages, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. With pnpm, add to `pnpm-workspace.yaml`:
 
 ```yaml
 overrides:
@@ -28,10 +28,10 @@ overrides:
   '@solidjs/signals': 2.0.0-rc.15
   '@solidjs/compiler': 2.0.0-rc.15
   '@solidjs/babel-plugin': 2.0.0-rc.15
-  '@wsagency/radix2solid-primitives': file:./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz
+  '@wsagency/radix2solid-primitives': 0.1.0-rc.3
 ```
 
-Every “Download runnable sandbox” archive under the documentation demos ships the pinned Solid workspace, including exact `minimumReleaseAgeExclude` entries for these Solid versions. With npm, set the equivalent Solid `overrides` in `package.json` and use `"@wsagency/radix2solid-primitives": "$@wsagency/radix2solid-primitives"` to reuse the direct archive dependency; with Yarn use `resolutions`, and with Bun use `overrides`, mapping Primitives to `file:./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz`. Keep the exact Solid versions in every package manager's resolution rules.
+Every “Download runnable sandbox” archive under the documentation demos ships the pinned Solid workspace, including exact `minimumReleaseAgeExclude` entries for these Solid versions and all five published package versions. With npm, set the equivalent Solid `overrides` in `package.json` and use `"@wsagency/radix2solid-primitives": "$@wsagency/radix2solid-primitives"` to reuse the exact direct dependency; with Yarn use `resolutions`, and with Bun use `overrides`, mapping Primitives to `0.1.0-rc.3`. Keep the exact Solid versions in every package manager's resolution rules.
 
 <Tabs.Root asChild defaultValue="npm">
   <CodeBlock.Root my="5">
@@ -48,7 +48,7 @@ Every “Download runnable sandbox” archive under the documentation demos ship
       <CodeBlock.Content>
         <CodeBlock.Pre>
           <CodeBlock.Code language="bash">
-            {'npm install ./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz ./wsagency-radix2solid-themes-0.1.0-rc.3.tgz'}
+            {'npm install -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'}
           </CodeBlock.Code>
         </CodeBlock.Pre>
         <CodeBlock.CopyButton />
@@ -59,7 +59,7 @@ Every “Download runnable sandbox” archive under the documentation demos ship
       <CodeBlock.Content>
         <CodeBlock.Pre>
           <CodeBlock.Code language="bash">
-            {'yarn add ./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz ./wsagency-radix2solid-themes-0.1.0-rc.3.tgz'}
+            {'yarn add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'}
           </CodeBlock.Code>
         </CodeBlock.Pre>
         <CodeBlock.CopyButton />
@@ -70,7 +70,7 @@ Every “Download runnable sandbox” archive under the documentation demos ship
       <CodeBlock.Content>
         <CodeBlock.Pre>
           <CodeBlock.Code language="bash">
-            {'pnpm add ./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz ./wsagency-radix2solid-themes-0.1.0-rc.3.tgz'}
+            {'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'}
           </CodeBlock.Code>
         </CodeBlock.Pre>
         <CodeBlock.CopyButton />
@@ -81,7 +81,7 @@ Every “Download runnable sandbox” archive under the documentation demos ship
       <CodeBlock.Content>
         <CodeBlock.Pre>
           <CodeBlock.Code language="bash">
-            {'bun add ./wsagency-radix2solid-primitives-0.1.0-rc.3.tgz ./wsagency-radix2solid-themes-0.1.0-rc.3.tgz'}
+            {'bun add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'}
           </CodeBlock.Code>
         </CodeBlock.Pre>
         <CodeBlock.CopyButton />
@@ -91,9 +91,9 @@ Every “Download runnable sandbox” archive under the documentation demos ship
   </CodeBlock.Root>
 </Tabs.Root>
 
-#### Complete candidate application
+#### Complete application
 
-The [runnable Combobox sandbox](/sandboxes/combobox-css-modules.tar.gz) includes both archives, the transitive local-Primitives override, RC15 tooling, CSS, and license files. Extract it, run `pnpm install`, then `pnpm dev`. [Combobox](/themes/docs/recipes/combobox), [Command](/themes/docs/recipes/command), [Tree](/themes/docs/recipes/tree), and [Splitter](/themes/docs/recipes/splitter) are recipes using native Primitives; they are not new Themes package exports.
+The [runnable Combobox sandbox](/sandboxes/combobox-css-modules.tar.gz) uses exact npm package versions and includes RC15 tooling, CSS, and license files. Extract it, run `pnpm install`, then `pnpm dev`. [Combobox](/themes/docs/recipes/combobox), [Command](/themes/docs/recipes/command), [Tree](/themes/docs/recipes/tree), and [Splitter](/themes/docs/recipes/splitter) are recipes using native Primitives; they are not new Themes package exports.
 
 Requirements: Node.js `>=22.12.0` for your build (this project's own tooling uses Node 24.21). The packages are built with TypeScript 7.0.2 and their published types are also checked with TypeScript 5.9.3. `postcss` is an optional peer dependency, needed only if you use the [PostCSS plugins](/themes/docs/theme/breakpoints#postcss-plugins); importing the compiled CSS needs no PostCSS setup.
 

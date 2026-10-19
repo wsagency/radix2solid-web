@@ -87,6 +87,389 @@ test('next suite native routes expose source Markdown search and downloads', asy
   await search.getByRole('combobox').fill('Combobox');
   await expect(search.locator('a[href^="/primitives/docs/components/combobox"]').first()).toBeVisible();
 });
+test('calendar/date-picker weekday accessible names follow a Monday start and locale change', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+  const calendar = page.getByRole('region', { name: 'Calendar demonstration', exact: true });
+  const grid = calendar.getByRole('grid');
+  await calendar.getByRole('button', { name: 'Change locale, week start and direction', exact: true }).click();
+  await expect(calendar.locator('[dir="rtl"]')).toBeVisible();
+  const expectedMonday = await page.evaluate(() =>
+    new Intl.DateTimeFormat('ar-EG', { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 19))));
+  await expect(grid.getByRole('columnheader').first()).toHaveAccessibleName(expectedMonday);
+});
+
+test('file-drop keyboard focus visibly identifies the native browse region', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#file-drop`);
+  const section = page.getByRole('region', { name: 'FileDrop demonstration', exact: true });
+  const input = section.getByLabel('Attachments', { exact: true });
+  const browse = section.getByRole('button', { name: 'Browse files', exact: true });
+  const dropRegion = input.locator('xpath=..');
+  const before = await dropRegion.evaluate(node => {
+    const style = getComputedStyle(node);
+    return [style.outlineStyle, style.outlineWidth, style.outlineColor, style.boxShadow, style.borderColor, style.borderWidth];
+  });
+  await browse.focus();
+  await browse.press('Shift+Tab');
+  await expect(input).toBeFocused();
+  expect(await input.evaluate(node => node.matches(':focus-visible'))).toBe(true);
+  const after = await dropRegion.evaluate(node => {
+    const style = getComputedStyle(node);
+    return [style.outlineStyle, style.outlineWidth, style.outlineColor, style.boxShadow, style.borderColor, style.borderWidth];
+  });
+  expect(after).not.toEqual(before);
+});
+
+test('file-drop submission displays accepted native FormData metadata separately from proposals', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#file-drop`);
+  const section = page.getByRole('region', { name: 'FileDrop demonstration', exact: true });
+  const input = section.getByLabel('Attachments', { exact: true });
+  const form = input.locator('xpath=ancestor::form[1]');
+  const accepted = { name: 'submitted-accepted.txt', mimeType: 'text/plain', buffer: Buffer.from('accepted payload') };
+  const proposal = { name: 'submitted-proposal.txt', mimeType: 'text/plain', buffer: Buffer.from('proposal payload') };
+  await input.setInputFiles(accepted);
+  await input.setInputFiles(proposal);
+  await expect(section.getByLabel('Accepted file names', { exact: true })).toContainText(accepted.name);
+  await expect(section.getByLabel('Proposed file names', { exact: true })).toContainText(proposal.name);
+  await form.evaluate(node => {
+    const form = node as HTMLFormElement;
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      (window as typeof window & { __websiteFileDropSubmittedMetadata?: { name: string; size: number; type: string }[] }).__websiteFileDropSubmittedMetadata =
+        new FormData(form).getAll('attachments').map(value => value instanceof File
+          ? { name: value.name, size: value.size, type: value.type }
+          : { name: String(value), size: 0, type: '' });
+    }, { once: true });
+  });
+  await section.getByRole('button', { name: 'Submit attachments', exact: true }).click();
+  const submitted = section.getByLabel('Submitted file metadata', { exact: true });
+  const expected = [{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType }];
+  await expect.poll(() => page.evaluate(() =>
+    (window as typeof window & { __websiteFileDropSubmittedMetadata?: { name: string; size: number; type: string }[] }).__websiteFileDropSubmittedMetadata
+  )).toEqual(expected);
+  await expect(submitted).toContainText(accepted.name);
+  await expect(submitted).toContainText(`${accepted.buffer.length} bytes`);
+  await expect(submitted).toContainText(accepted.mimeType);
+  await expect(submitted).not.toContainText(proposal.name);
+});
+
+test('calendar/date-picker pages expose source, Markdown and runnable archives', async ({ page, request }) => {
+  const records = await (await request.get(`${origin}/search-index.json`)).json() as { url: string }[];
+  for (const family of ['calendar', 'date-picker'] as const) {
+    for (const path of [`/primitives/docs/components/${family}`, `/themes/docs/components/${family}`]) {
+      await page.goto(`${origin}${path}`);
+      const references = page.getByRole('navigation', { name: 'Document references', exact: true });
+      await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `${path}.md`);
+      if (path.startsWith('/themes/')) {
+        await expect(references.getByRole('link', { name: 'View in playground', exact: true })).toHaveAttribute('href', `/themes/playground#${family}`);
+      }
+      const response = await request.get(`${origin}${path}`, { headers: { Accept: 'text/markdown' } });
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toContain('text/markdown');
+      const markdown = await response.text();
+      const twin = await request.get(`${origin}${path}.md`);
+      expect(twin.status()).toBe(200);
+      expect(twin.headers()['content-type']).toContain('text/markdown');
+      const documentLinks = [...new Set([...markdown.matchAll(/\]\((\/(?:primitives|themes)\/docs\/[^)#\s]+)/g)].map(match => match[1]))];
+      for (const link of documentLinks) expect((await request.get(`${origin}${link}`)).status(), `Markdown document link ${link}`).toBe(200);
+      expect(records.some(record => record.url === path || record.url.startsWith(`${path}#`))).toBe(true);
+    }
+    for (const style of ['css', 'css-modules', 'tailwind']) {
+      expect((await request.get(`${origin}/sandboxes/${family}-${style}.tar.gz`)).ok()).toBe(true);
+    }
+  }
+});
+
+test('calendar/date-picker playground exposes runnable source downloads', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+  for (const family of ['calendar', 'date-picker'] as const) {
+    await expect(page.locator(`#${family}`)).toBeVisible();
+    await expect(page.locator(`a[href="/themes/docs/components/${family}"]`).first()).toBeVisible();
+    const source = page.getByRole('region', { name: `${family === 'calendar' ? 'Calendar' : 'DatePicker'} demo source`, exact: true });
+    const styling = source.getByLabel('Styling solution', { exact: true });
+    const sourceFile = source.getByLabel('Source file', { exact: true });
+    await expect(sourceFile).toBeVisible();
+    for (const style of ['css-modules', 'css', 'tailwind']) {
+      await styling.selectOption(style);
+      const downloadLink = source.getByRole('link', { name: 'Download runnable sandbox', exact: true });
+      await expect(downloadLink).toHaveAttribute('href', `/sandboxes/${family}-${style}.tar.gz`);
+      const download = page.waitForEvent('download');
+      await downloadLink.click();
+      expect((await download).suggestedFilename()).toBe(`${family}-${style}.tar.gz`);
+    }
+  }
+});
+
+test('calendar/date-picker styled DatePicker portal inherits theme and accepts a date', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+
+  const styledTrigger = page.getByRole('button', { name: 'Choose styled appointment date', exact: true });
+  const triggerAccent = await styledTrigger.evaluate(node => getComputedStyle(node).getPropertyValue('--accent-9').trim());
+  expect(triggerAccent).not.toBe('');
+  await styledTrigger.click();
+  const styledPopup = page.getByRole('dialog', { name: 'Choose an appointment date', exact: true });
+  await expect(styledPopup).toBeVisible();
+  const popupAccent = await styledPopup.evaluate(node => getComputedStyle(node).getPropertyValue('--accent-9').trim());
+  expect(popupAccent).toBe(triggerAccent);
+  await styledPopup.getByRole('grid').getByRole('button', { name: 'October 19, 2026', exact: true }).click();
+  await expect(styledPopup).toBeHidden();
+  await expect(styledTrigger).toContainText('October 19, 2026');
+});
+
+test('calendar/date-picker Calendar selection survives locale, week-start and direction changes', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+
+  const calendar = page.getByRole('region', { name: 'Calendar demonstration', exact: true });
+  const grid = calendar.getByRole('grid');
+  await expect(grid).toBeVisible();
+  const acceptedCalendarDate = calendar.getByLabel('Accepted date');
+  const octoberNineteenth = grid.getByRole('button', { name: 'October 19, 2026', exact: true });
+  await expect(octoberNineteenth).toBeEnabled();
+  await octoberNineteenth.focus();
+  await page.keyboard.press('Enter');
+  await expect(acceptedCalendarDate).toHaveText('2026-10-19');
+  const weekdayBefore = await grid.getByRole('columnheader').first().innerText();
+  await calendar.getByRole('button', { name: 'Change locale, week start and direction', exact: true }).click();
+  await expect(calendar.locator('[dir="rtl"]')).toBeVisible();
+  expect(await grid.getByRole('columnheader').first().innerText()).not.toBe(weekdayBefore);
+  await expect(acceptedCalendarDate).toHaveText('2026-10-19');
+});
+
+test('calendar/date-picker native DatePicker validity, viewport keyboard selection, clear and form submission', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+
+  const datePicker = page.getByRole('region', { name: 'DatePicker demonstration', exact: true });
+  const bridge = datePicker.locator('input[type="date"]');
+  const form = bridge.locator('xpath=ancestor::form[1]');
+  const trigger = datePicker.locator('button[aria-haspopup="dialog"]').first();
+  await expect(bridge).toBeVisible();
+  await expect.poll(() => bridge.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+  await form.evaluate(node => (node as HTMLFormElement).requestSubmit());
+  await bridge.focus();
+  await expect(trigger).toBeFocused();
+  await expect(bridge).not.toBeFocused();
+  await expect(bridge).not.toHaveValue('2026-10-19');
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await page.setViewportSize({ width: 420, height: 320 });
+  await trigger.click();
+  const clippedPopup = page.getByRole('dialog').last();
+  const octoberThirtieth = clippedPopup.getByRole('grid').getByRole('button', { name: 'October 30, 2026', exact: true });
+  await octoberThirtieth.focus();
+  await page.keyboard.press('ArrowRight');
+  const octoberThirtyFirst = clippedPopup.getByRole('grid').getByRole('button', { name: 'October 31, 2026', exact: true });
+  await expect(octoberThirtyFirst).toBeFocused();
+  await expect.poll(async () => {
+    const bounds = await clippedPopup.boundingBox();
+    const viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+    return bounds !== null && bounds.x >= -2 && bounds.y >= -2
+      && bounds.x + bounds.width <= viewport.width + 2
+      && bounds.y + bounds.height <= viewport.height + 2;
+  }).toBe(true);
+  await octoberThirtyFirst.click();
+  await expect(bridge).toHaveValue('2026-10-31');
+  await expect.poll(() => form.evaluate(node => new FormData(node as HTMLFormElement).get('appointment'))).toBe('2026-10-31');
+  await page.setViewportSize(viewport!);
+  await datePicker.getByRole('button', { name: 'Clear date', exact: true }).click();
+  await expect(bridge).toHaveValue('');
+  await trigger.click();
+  const popup = page.getByRole('dialog').last();
+  await expect(popup).toBeVisible();
+  const pickerDay = popup.getByRole('grid').getByRole('button', { name: 'October 19, 2026', exact: true });
+  await expect(pickerDay).toBeEnabled();
+  await pickerDay.focus();
+  await page.keyboard.press('Enter');
+  await expect(popup).toBeHidden();
+  await expect(bridge).toHaveValue('2026-10-19');
+  await expect(trigger).toHaveText('October 19, 2026');
+  const fieldName = await bridge.getAttribute('name');
+  await expect.poll(() => form.evaluate((node, name) =>
+    new FormData(node as HTMLFormElement).get(name), fieldName!)).toBe('2026-10-19');
+  await form.evaluate((node, name) => {
+    const form = node as HTMLFormElement;
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      (window as typeof window & { __websiteDatePickerSubmit?: string | null }).__websiteDatePickerSubmit =
+        String(new FormData(form).get(name) ?? '');
+    }, { once: true });
+    form.requestSubmit();
+  }, fieldName!);
+  await expect.poll(() => page.evaluate(() =>
+    (window as typeof window & { __websiteDatePickerSubmit?: string | null }).__websiteDatePickerSubmit)).toBe('2026-10-19');
+  await datePicker.getByRole('button', { name: 'Clear date', exact: true }).click();
+  await expect(bridge).toHaveValue('');
+  await expect.poll(() => bridge.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+});
+
+test('calendar/date-picker controlled DatePicker refusal preserves the rendered accepted value', async ({ page }) => {
+  await page.goto(`${origin}/themes/playground#calendar`);
+
+  const datePickerDemo = page.getByRole('region', { name: 'DatePicker demonstration', exact: true });
+  const requestedDate = datePickerDemo.getByLabel('Value requests');
+  const refusalTrigger = datePickerDemo.getByRole('button', { name: 'Choose a date', exact: true });
+  await refusalTrigger.click();
+  const refusedPopup = page.getByRole('dialog', { name: 'Choose a date', exact: true });
+  await refusedPopup.getByRole('grid').getByRole('button', { name: 'October 19, 2026', exact: true }).click();
+  await expect(requestedDate).toHaveText('2026-10-19');
+  await expect(refusalTrigger).toContainText('October 18, 2026');
+  await expect(refusedPopup).toBeHidden();
+});
+
+test('calendar/date-picker Calendar documentation search navigates to Calendar docs', async ({ page }) => {
+  await page.goto(`${origin}/primitives/docs/components/calendar`);
+  await page.getByRole('button', { name: 'Search documentation', exact: true }).click();
+  const search = page.getByRole('dialog', { name: 'Search documentation', exact: true });
+  await search.getByRole('combobox').fill('Calendar');
+  const result = search.locator('a[href^="/primitives/docs/components/calendar"]').first();
+  await expect(result).toBeVisible();
+  const resultUrl = await result.evaluate(anchor => (anchor as HTMLAnchorElement).href);
+  await result.click();
+  await expect(page).toHaveURL(resultUrl);
+  await expect(search).toBeHidden();
+});
+
+test('calendar/date-picker DatePicker documentation search navigates to DatePicker docs', async ({ page }) => {
+  await page.goto(`${origin}/primitives/docs/components/date-picker`);
+  await page.getByRole('button', { name: 'Search documentation', exact: true }).click();
+  const search = page.getByRole('dialog', { name: 'Search documentation', exact: true });
+  await search.getByRole('combobox').fill('Date Picker');
+  const result = search.locator('a[href^="/primitives/docs/components/date-picker"]').first();
+  await expect(result).toBeVisible();
+  const resultUrl = await result.evaluate(anchor => (anchor as HTMLAnchorElement).href);
+  await result.click();
+  await expect(page).toHaveURL(resultUrl);
+  await expect(search).toBeHidden();
+});
+
+test('file-drop pages expose native playground, source, Markdown and accepted FormData', async ({ page, request }) => {
+  const records = await (await request.get(`${origin}/search-index.json`)).json() as { url: string }[];
+  for (const path of ['/primitives/docs/components/file-drop', '/themes/docs/components/file-drop']) {
+    await page.goto(`${origin}${path}`);
+    const references = page.getByRole('navigation', { name: 'Document references', exact: true });
+    await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `${path}.md`);
+    if (path.startsWith('/themes/')) {
+      await expect(references.getByRole('link', { name: 'View in playground', exact: true })).toHaveAttribute('href', '/themes/playground#file-drop');
+    }
+    const response = await request.get(`${origin}${path}`, { headers: { Accept: 'text/markdown' } });
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/markdown');
+    const markdown = await response.text();
+    const twin = await request.get(`${origin}${path}.md`);
+    expect(twin.status()).toBe(200);
+    expect(twin.headers()['content-type']).toContain('text/markdown');
+    const documentLinks = [...new Set([...markdown.matchAll(/\]\((\/(?:primitives|themes)\/docs\/[^)#\s]+)/g)].map(match => match[1]))];
+    for (const link of documentLinks) expect((await request.get(`${origin}${link}`)).status(), `Markdown document link ${link}`).toBe(200);
+    expect(records.some(record => record.url === path || record.url.startsWith(`${path}#`))).toBe(true);
+  }
+  for (const style of ['css', 'css-modules', 'tailwind']) {
+    expect((await request.get(`${origin}/sandboxes/file-drop-${style}.tar.gz`)).ok()).toBe(true);
+  }
+
+  await page.goto(`${origin}/themes/playground#file-drop`);
+  const section = page.locator('#file-drop').locator('xpath=../..');
+  await expect(section).toBeVisible();
+  await expect(page.locator('a[href="/themes/docs/components/file-drop"]').first()).toBeVisible();
+  const source = page.getByRole('region', { name: 'FileDrop demo source', exact: true });
+  const styling = source.getByLabel('Styling solution', { exact: true });
+  const sourceFile = source.getByLabel('Source file', { exact: true });
+  await expect(sourceFile).toBeVisible();
+  for (const style of ['css-modules', 'css', 'tailwind']) {
+    await styling.selectOption(style);
+    const downloadLink = source.getByRole('link', { name: 'Download runnable sandbox', exact: true });
+    await expect(downloadLink).toHaveAttribute('href', `/sandboxes/file-drop-${style}.tar.gz`);
+    const download = page.waitForEvent('download');
+    await downloadLink.click();
+    expect((await download).suggestedFilename()).toBe(`file-drop-${style}.tar.gz`);
+  }
+
+  const input = section.locator('input[type="file"][multiple]').first();
+  await expect(input).toBeAttached();
+  await expect(section.getByRole('button', { name: 'Browse files', exact: true })).toBeVisible();
+  const accepted = { name: 'accepted.txt', mimeType: 'text/plain', buffer: Buffer.from('accepted website file') };
+  await input.setInputFiles(accepted);
+  await expect(section.getByText(accepted.name, { exact: true })).toBeVisible();
+  const form = input.locator('xpath=ancestor::form[1]');
+  await expect(form).toBeVisible();
+  const fieldName = await input.getAttribute('name');
+  expect(fieldName).toBeTruthy();
+  const submittedFiles = async () => form.evaluate(async (node, name) => {
+    const values = new FormData(node as HTMLFormElement).getAll(name);
+    return Promise.all(values.map(async value => value instanceof File
+      ? { name: value.name, size: value.size, type: value.type, contents: await value.text() }
+      : { value: String(value) }));
+  }, fieldName!);
+  await form.evaluate((node, name) => {
+    const form = node as HTMLFormElement;
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      (window as typeof window & { __websiteFileDropSubmission?: FormDataEntryValue[] }).__websiteFileDropSubmission =
+        new FormData(form).getAll(name);
+    }, { once: true });
+    form.requestSubmit();
+  }, fieldName!);
+  await expect.poll(() => page.evaluate(async () => Promise.all(
+    ((window as typeof window & { __websiteFileDropSubmission?: FormDataEntryValue[] }).__websiteFileDropSubmission ?? [])
+      .map(async value => value instanceof File
+        ? { name: value.name, size: value.size, type: value.type, contents: await value.text() }
+        : { value: String(value) })
+  ))).toEqual([{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType, contents: accepted.buffer.toString() }]);
+
+  await input.setInputFiles([
+    { name: 'valid.txt', mimeType: 'text/plain', buffer: Buffer.from('valid') },
+    { name: 'rejected.pdf', mimeType: 'application/pdf', buffer: Buffer.from('rejected') }
+  ]);
+  await expect(section.getByRole('alert')).toBeVisible();
+  await expect(section.getByText(accepted.name, { exact: true })).toBeVisible();
+  expect(await submittedFiles()).toEqual([{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType, contents: accepted.buffer.toString() }]);
+
+  await input.setInputFiles({ name: 'refused.txt', mimeType: 'text/plain', buffer: Buffer.from('refused') });
+  await section.getByRole('button', { name: 'Refuse proposed files', exact: true }).click();
+  await expect(section.getByText(accepted.name, { exact: true })).toBeVisible();
+  expect(await submittedFiles()).toEqual([{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType, contents: accepted.buffer.toString() }]);
+  await input.setInputFiles({ name: 'deferred.txt', mimeType: 'text/plain', buffer: Buffer.from('deferred') });
+  expect(await submittedFiles()).toEqual([{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType, contents: accepted.buffer.toString() }]);
+  await section.getByRole('button', { name: 'Adopt proposed files', exact: true }).click();
+  await expect(section.getByText('deferred.txt', { exact: true })).toBeVisible();
+  expect(await submittedFiles()).toEqual([{ name: 'deferred.txt', size: 8, type: 'text/plain', contents: 'deferred' }]);
+
+  const dropped = { name: 'dropped.txt', mimeType: 'text/plain', contents: 'dropped browser file' };
+  const dataTransfer = await page.evaluateHandle(spec => {
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([spec.contents], spec.name, { type: spec.mimeType }));
+    return transfer;
+  }, dropped);
+  await input.dispatchEvent('drop', { dataTransfer });
+  await expect(section.getByText(dropped.name, { exact: true })).toBeVisible();
+  expect(await submittedFiles()).toEqual([{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, contents: dropped.contents }]);
+
+  const disabled = section.getByRole('checkbox', { name: 'Disable file selection', exact: true });
+  await disabled.check();
+  await expect(input).toBeDisabled();
+  await expect(section.getByText(dropped.name, { exact: true })).toBeVisible();
+  expect(await submittedFiles()).toEqual([]);
+  await disabled.uncheck();
+  expect(await submittedFiles()).toEqual([{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, contents: dropped.contents }]);
+  await input.setInputFiles([]);
+  await expect.poll(() => input.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+  expect(await submittedFiles()).toEqual([{ name: '', size: 0, type: 'application/octet-stream', contents: '' }]);
+
+});
+
+test('file-drop documentation search navigates to FileDrop docs', async ({ page }) => {
+  await page.goto(`${origin}/primitives/docs/components/file-drop`);
+  await page.getByRole('button', { name: 'Search documentation', exact: true }).click();
+  const search = page.getByRole('dialog', { name: 'Search documentation', exact: true });
+  const searchIndexResponse = page.waitForResponse(response => response.url() === `${origin}/search-index.json`);
+  await search.getByRole('combobox').fill('File Drop');
+  const searchIndex = await searchIndexResponse;
+  await searchIndex.finished();
+  const result = search.locator('a[href^="/primitives/docs/components/file-drop"]').first();
+  const resultUrl = await result.evaluate(anchor => (anchor as HTMLAnchorElement).href);
+  await expect(result).toBeVisible();
+  await result.click();
+  await expect(page).toHaveURL(resultUrl);
+  await expect(search).toBeHidden();
+});
+
 
 for (const [family, role, name] of [
   ['combobox', 'combobox', 'External destination'],
@@ -611,20 +994,19 @@ test('next suite Charts remeasures auto axis when actual local fonts finish load
   }
 });
 
-test('published package installation remains distinct from next suite local candidates', async ({ page, context, browserName, request }) => {
+test('published rc.3 package guides pin npm versions and link the registry release', async ({ page, context, browserName, request }) => {
   test.skip(browserName !== 'chromium', 'Native clipboard read permission is supported by Chromium.');
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
-  for (const [name, path, manager] of [
-    ['primitives', '/primitives/docs/overview/getting-started', 'npm install'],
-    ['themes', '/themes/docs/overview/getting-started', 'pnpm add'],
-    ['icons', '/icons', 'pnpm add'],
-    ['charts', '/charts/docs/overview/getting-started', 'pnpm add'],
-    ['icons-extra', '/icons', 'pnpm add'],
+  for (const [name, path, command] of [
+    ['primitives', '/primitives/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3'],
+    ['themes', '/themes/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'],
+    ['icons', '/icons', 'pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.3'],
+    ['charts', '/charts/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.3'],
+    ['icons-extra', '/icons#extra-installation', 'pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.3'],
   ]) {
-    const manifest = JSON.parse(readFileSync(new URL(`../.library/packages/${name}/package.json`, import.meta.url), 'utf8'));
-    const archive = `wsagency-radix2solid-${name}-${manifest.version}.tgz`;
-    const archives = name === 'themes' ? `./wsagency-radix2solid-primitives-${manifest.version}.tgz ./${archive}` : `./${archive}`;
-    const command = `${manager} ${archives}`;
+    const args = command.slice('pnpm add '.length);
+    const npmCommand = `npm install ${args}`;
+    const npmUrl = `https://www.npmjs.com/package/@wsagency/radix2solid-${name}/v/0.1.0-rc.3`;
     await page.goto(`${origin}${path}`);
     if (name === 'themes') await page.getByRole('tab', { name: 'pnpm', exact: true }).click();
     const code = page.locator('pre').filter({ hasText: command }).filter({ visible: true }).first();
@@ -638,24 +1020,32 @@ test('published package installation remains distinct from next suite local cand
       for (const [tab, verb] of [['npm', 'install'], ['yarn', 'add'], ['bun', 'add']]) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         const panel = page.getByRole('tabpanel').filter({ visible: true });
-        const expected = `${tab} ${verb} ${archives}`;
+        const expected = `${tab} ${verb} ${args}`;
         await expect(panel.locator('pre')).toHaveText(expected);
         await panel.getByRole('button', { name: 'Copy code to clipboard', exact: true }).click();
         await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expected);
       }
+      await page.getByRole('tab', { name: 'npm', exact: true }).click();
     }
-    await expect(page.locator(`a[href="/packages/${archive}"]`).first()).toBeVisible();
-    expect((await request.get(`${origin}/packages/${archive}`)).ok()).toBe(true);
+    await expect(page.locator('pre').filter({ hasText: npmCommand }).filter({ visible: true }).first()).toHaveText(npmCommand);
+    await expect(page.locator(`a[href="${npmUrl}"]`).first()).toBeVisible();
+    await expect(page.locator('body')).toContainText(/published on npm as 0\.1\.0-rc\.3.*release candidate.*dist-tag.*next/i);
+    await expect(page.locator('a[href^="/packages/"]')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText('@latest');
     if (name === 'icons') {
-      const input = page.getByRole('textbox', { name: 'Install downloaded native icons candidate', exact: true });
+      const input = page.getByRole('textbox', { name: 'Install native icons package from npm', exact: true });
       await expect(input).toHaveValue(command);
       await input.click();
       expect(await input.evaluate(node => (node as HTMLInputElement).selectionEnd! - (node as HTMLInputElement).selectionStart!)).toBe(command.length);
     }
-    const markdown = await (await request.get(`${origin}${path}.md`)).text();
-    expect(markdown).toContain(name === 'themes' ? `npm install ${archives}` : command);
-    expect(markdown).toContain(`/packages/${archive}`);
-    expect(markdown).not.toContain(`-E ${manifest.name}@${manifest.version}`);
+    const markdown = await (await request.get(`${origin}${path.split('#')[0]}.md`)).text();
+    if (name !== 'themes') expect(markdown).toContain(command);
+    expect(markdown).toContain(npmCommand);
+    expect(markdown).toContain(npmUrl);
+    expect(markdown).toContain('release candidate, dist-tag');
+    expect(markdown).not.toContain('/packages/wsagency-radix2solid-');
+    expect(markdown).not.toContain('.tgz');
+    expect(markdown).not.toContain('@latest');
   }
 });
 
@@ -1489,8 +1879,10 @@ test('charts landing hydrates one chart per container, switches chart type and s
   const families = page.locator('a[href^="/charts/docs/components/"]').filter({ has: page.locator('.recharts-wrapper') });
   await expect(families).toHaveCount(12);
   for (const family of await families.all()) await expect(family.locator('.recharts-wrapper > svg.recharts-surface')).toHaveCount(1);
-  const download = page.getByRole('link', { name: 'Download candidate', exact: true });
-  expect((await request.get(`${origin}${await download.getAttribute('href')}`)).status()).toBe(200);
+  await expect(page.getByRole('link', { name: 'View on npm', exact: true })).toHaveAttribute('href', 'https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3');
+  await expect(page.locator('body')).toContainText('Charts is published on npm as');
+  await expect(page.locator('body')).toContainText('pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.3');
+  await expect(page.locator('a[href^="/packages/"]')).toHaveCount(0);
   const notice = await (await request.get(`${origin}/NOTICE.txt`)).text();
   for (const text of ['Copyright (c) 2026 Thomas Guehenneux', 'Copyright (c) 2015-present recharts', '--- d3-scale@', '--- d3-shape@', '--- internmap@', '--- solid-js@2.0.0-rc.15 ', '--- @floating-ui/dom@', 'Copyright (c) 2022 WorkOS']) expect(notice).toContain(text);
   await page.goto(`${origin}/charts/docs/overview/introduction`);
