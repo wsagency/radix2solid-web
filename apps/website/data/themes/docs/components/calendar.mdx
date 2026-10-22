@@ -25,9 +25,9 @@ import { Calendar } from "@wsagency/radix2solid-themes";
 </Calendar.Root>
 ```
 
-This compound wrapper is a native Solid project extension, not an official Radix React component, and is available only in the unpublished local candidate. The public parts, refs, scopes, selection and navigation state remain those of [`Calendar` in Primitives](/primitives/docs/components/calendar). The wrapper adds Themes styling; it does not add range selection, time, other calendar systems, or a second focus engine.
+This compound wrapper is a native Solid project extension, not an official Radix React component, and is included in published Themes `0.1.0-rc.4`. The public parts, refs, scopes, selection and navigation state remain those of [`Calendar` in Primitives](/primitives/docs/components/calendar). The wrapper adds Themes styling; it does not add range selection, time, other calendar systems, or a second focus engine.
 
-Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+Select the Calendar CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs exact published Primitives and Themes versions from npm; no local package tarballs are bundled. Extract the archive, run `pnpm install` and `pnpm build`.
 
 ## Styling props
 

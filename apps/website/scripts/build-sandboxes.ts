@@ -20,12 +20,12 @@ function run(command: string, args: string[], cwd = root) {
 }
 type PackageManifest = { name: string; version: string };
 const sourcePin: { commit: string } = JSON.parse(await readFile(resolve(root, 'library-source.json'), 'utf8'));
-if (!/^[0-9a-f]{40}$/.test(sourcePin.commit)) throw new Error('Candidate sandboxes require the full pinned library source commit.');
+if (!/^[0-9a-f]{40}$/.test(sourcePin.commit)) throw new Error('Sandboxes require the full pinned library source commit.');
 const packageNames = ['primitives', 'icons', 'icons-extra', 'themes', 'charts'];
 const manifests = new Map<string, PackageManifest>();
 for (const name of packageNames) {
   const manifest: PackageManifest = JSON.parse(await readFile(resolve(library, `packages/${name}/package.json`), 'utf8'));
-  if (!['primitives', 'themes'].includes(name) && manifest.version !== '0.1.0-rc.3') throw new Error(`${manifest.name} must match the published 0.1.0-rc.3 package.`);
+  if (manifest.version !== '0.1.0-rc.4') throw new Error(`${manifest.name} must match the published 0.1.0-rc.4 package.`);
   manifests.set(name, manifest);
 }
 const tarballName = (manifest: PackageManifest) => `${manifest.name.slice(1).replace('/', '-')}-${manifest.version}.tgz`;
@@ -37,7 +37,7 @@ for (const name of packageNames) {
 }
 const primitivesManifest = manifests.get('primitives')!;
 const themesManifest = manifests.get('themes')!;
-const candidateFamilies = ['calendar', 'date-picker', 'file-drop'] as const;
+const nativeFamilies = ['calendar', 'date-picker', 'file-drop'] as const;
 const packedFiles = (archive: string) => {
   const result = spawnSync('tar', ['-tzf', resolve(packageOutput, archive)], { encoding: 'utf8' });
   if (result.error) throw result.error;
@@ -46,15 +46,11 @@ const packedFiles = (archive: string) => {
 };
 const primitiveFiles = packedFiles(tarballName(primitivesManifest));
 const themesFiles = packedFiles(tarballName(themesManifest));
-for (const family of candidateFamilies) {
+for (const family of nativeFamilies) {
   if (!primitiveFiles.has(`package/dist/types/${family}/index.d.ts`) || !themesFiles.has(`package/dist/types/components/${family}.d.ts`)) {
-    throw new Error(`Pinned source ${sourcePin.commit} does not contain packed Primitives and Themes ${family} APIs; refusing registry-version candidate sandboxes.`);
+    throw new Error(`Pinned source ${sourcePin.commit} does not contain packed Primitives and Themes ${family} APIs; refusing native archive generation.`);
   }
 }
-const candidatePrimitives = tarballName(primitivesManifest);
-const candidateThemes = tarballName(themesManifest);
-const localPrimitives = `file:./vendor/${candidatePrimitives}`;
-const localThemes = `file:./vendor/${candidateThemes}`;
 const chartsManifest = manifests.get('charts')!;
 const extraManifest = manifests.get('icons-extra')!;
 const dependencies: Record<string, string> = {
@@ -68,14 +64,11 @@ const dependencies: Record<string, string> = {
 await cp(resolve(library, 'packages/icons-extra/icons'), resolve(site, 'out/icons-extra'), { recursive: true });
 // The sandbox keeps the exact Solid RC15 overrides, exact package versions and exact age exceptions.
 // Host-only workspace globs and Playwright exceptions are removed.
-const workspaceSource = (await readFile(resolve(root, 'pnpm-workspace.yaml'), 'utf8'))
+const workspace = (await readFile(resolve(root, 'pnpm-workspace.yaml'), 'utf8'))
   .replace(/^packages:\n(?: {2}- .*\n)+\n/m, '')
-  .replace(/^ {2}- '?(?:@playwright\/test|playwright|playwright-core)@.*\n/gm, '');
-function workspaceFor(candidate: boolean) {
-  return workspaceSource
-    .replace('overrides:\n', `overrides:\n  '@wsagency/radix2solid-primitives': ${JSON.stringify(candidate ? localPrimitives : primitivesManifest.version)}\n`)
-    .replace('minimumReleaseAgeExclude:\n', `minimumReleaseAgeExclude:\n${packageNames.map(name => `  - '${manifests.get(name)!.name}@${manifests.get(name)!.version}'\n`).join('')}`);
-}
+  .replace(/^ {2}- '?(?:@playwright\/test|playwright|playwright-core)@.*\n/gm, '')
+  .replace('overrides:\n', `overrides:\n  '@wsagency/radix2solid-primitives': ${JSON.stringify(primitivesManifest.version)}\n`)
+  .replace('minimumReleaseAgeExclude:\n', `minimumReleaseAgeExclude:\n${packageNames.map(name => `  - '${manifests.get(name)!.name}@${manifests.get(name)!.version}'\n`).join('')}`);
 const globalCss = 'body{margin:0;font-family:system-ui}.radix-themes{min-height:100vh;display:grid;place-items:center;background:linear-gradient(140deg,var(--violet-9),var(--purple-9))}';
 let count = 0;
 for await (const entry of glob('*/index.tsx', { cwd: resolve(site, 'src/demos') })) {
@@ -87,27 +80,16 @@ for await (const entry of glob('*/index.tsx', { cwd: resolve(site, 'src/demos') 
       throw error;
     }
     const project = resolve(staging, `${name}-${solution}`);
-    const candidate = candidateFamilies.includes(name as typeof candidateFamilies[number]);
     await mkdir(project, { recursive: true });
     for await (const file of glob('*.{tsx,css,cjs}', { cwd: source })) {
       let content = await readFile(resolve(source, file), 'utf8');
       if (solution === 'tailwind' && file === 'styles.css') content = content.replace('./index.tsx', './demo.tsx');
       await writeFile(resolve(project, file === 'index.tsx' ? 'demo.tsx' : basename(file)), content);
     }
-    const projectDependencies = {
-      ...(name === 'charts' ? { ...dependencies, [chartsManifest.name]: chartsManifest.version }
-        : name === 'icons-extra' ? { ...dependencies, [extraManifest.name]: extraManifest.version } : dependencies),
-      ...(candidate ? { [primitivesManifest.name]: localPrimitives, [themesManifest.name]: localThemes } : {})
-    };
-    if (candidate) {
-      const vendor = resolve(project, 'vendor');
-      await mkdir(vendor, { recursive: true });
-      await cp(resolve(packageOutput, candidatePrimitives), resolve(vendor, candidatePrimitives));
-      await cp(resolve(packageOutput, candidateThemes), resolve(vendor, candidateThemes));
-      await writeFile(resolve(project, 'CANDIDATE.md'), `# Local candidate sandbox\n\nThese examples bundle the actual packed Primitives and Themes packages from source commit ${sourcePin.commit}. They do not install the unpublished APIs from npm or claim that npm 0.1.0-rc.3 contains these exports.\n\nUnpack this archive, then run:\n\n\`\`\`sh\npnpm install\npnpm build\npnpm dev\n\`\`\`\n`);
-    }
+    const projectDependencies = name === 'charts' ? { ...dependencies, [chartsManifest.name]: chartsManifest.version }
+      : name === 'icons-extra' ? { ...dependencies, [extraManifest.name]: extraManifest.version } : dependencies;
     await writeFile(resolve(project, 'package.json'), JSON.stringify({ name: `radix-solid-${name}-${solution}-demo`, private: true, type: 'module', packageManager: 'pnpm@11.5.0', engines: { node: '>=24 <25' }, scripts: { dev: 'vite', build: 'vite build' }, dependencies: projectDependencies, devDependencies: { '@solidjs/vite-plugin': '3.0.0-next.50', vite: '8.3.3', ...(solution === 'tailwind' ? { tailwindcss: '4.3.3', '@tailwindcss/vite': '4.3.3' } : {}) } }, null, 2));
-    await writeFile(resolve(project, 'pnpm-workspace.yaml'), workspaceFor(candidate));
+    await writeFile(resolve(project, 'pnpm-workspace.yaml'), workspace);
     await writeFile(resolve(project, 'vite.config.ts'), `import { defineConfig } from 'vite';\nimport solid from '@solidjs/vite-plugin';\n${solution === 'tailwind' ? "import tailwindcss from '@tailwindcss/vite';\n" : ''}export default defineConfig({ plugins: [solid()${solution === 'tailwind' ? ', tailwindcss()' : ''}], resolve: { dedupe: ['solid-js', '@solidjs/web', '@solidjs/signals'] } });\n`);
     await writeFile(resolve(project, 'entry.tsx'), `import { render } from '@solidjs/web';\nimport { Theme } from '@wsagency/radix2solid-themes';\nimport '@wsagency/radix2solid-themes/styles.css';\n${solution === 'tailwind' ? "import './styles.css';\n" : ''}import Demo from './demo.tsx';\nimport './global.css';\nrender(() => <Theme accentColor="indigo"><Demo /></Theme>, document.getElementById('root')!);\n`);
     await writeFile(resolve(project, 'index.html'), `<!doctype html>
@@ -131,4 +113,4 @@ for await (const entry of glob('*/index.tsx', { cwd: resolve(site, 'src/demos') 
     count++;
   }
 }
-console.log(`Built ${count} runnable native sandboxes; the nine candidate archives use locally packed Primitives and Themes from ${sourcePin.commit}, while all other archives use pinned npm packages.`);
+console.log(`Built ${count} runnable native sandboxes with exact npm packages and pinned Solid 2.`);

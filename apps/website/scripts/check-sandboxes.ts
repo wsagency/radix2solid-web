@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, open, readFile, readdir, rm, realpath, type FileHandle } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -10,21 +10,7 @@ import { preview } from 'vite';
 const site = resolve(import.meta.dirname, '..');
 const output = resolve(site, 'out/sandboxes');
 const coverage: { sandboxes: string[] } = JSON.parse(await readFile(resolve(site, 'coverage-manifest.json'), 'utf8'));
-const sourcePin: { commit: string } = JSON.parse(await readFile(resolve(site, '../../library-source.json'), 'utf8'));
-assert.match(sourcePin.commit, /^[0-9a-f]{40}$/);
 const archives = (await readdir(output)).filter(name => name.endsWith('.tar.gz')).sort();
-const candidateArchives = new Set([
-  'calendar-css-modules.tar.gz', 'calendar-css.tar.gz', 'calendar-tailwind.tar.gz',
-  'date-picker-css-modules.tar.gz', 'date-picker-css.tar.gz', 'date-picker-tailwind.tar.gz',
-  'file-drop-css-modules.tar.gz', 'file-drop-css.tar.gz', 'file-drop-tailwind.tar.gz'
-]);
-assert.deepEqual([...candidateArchives].filter(name => !coverage.sandboxes.includes(name)), []);
-function packedManifest(archive: string) {
-  const result = spawnSync('tar', ['-xOzf', archive, 'package/package.json'], { encoding: 'utf8' });
-  if (result.error) throw result.error;
-  assert.equal(result.status, 0, `Could not read packed manifest from ${archive}`);
-  return JSON.parse(result.stdout) as { name: string; version: string };
-}
 assert.deepEqual(archives, [...coverage.sandboxes].sort());
 const requested = process.argv.slice(2);
 for (const archive of requested) assert(archives.includes(archive), `Unknown requested archive: ${archive}`);
@@ -286,64 +272,49 @@ try {
           });
         };
         await exec('tar', ['-xzf', resolve(output, archive), '-C', project]);
-        const isCandidate = candidateArchives.has(archive);
+        // Downloaded metadata must pin the coherent tuple, exact registry packages and exact age exceptions.
         const workspace = await readFile(resolve(project, 'pnpm-workspace.yaml'), 'utf8');
+        for (const name of ['solid-js', "'@solidjs/web'", "'@solidjs/signals'", "'@solidjs/compiler'", "'@solidjs/babel-plugin'"]) {
+          assert(workspace.includes(`\n  ${name}: 2.0.0-rc.15\n`), `${archive}: missing ${name} RC15 override`);
+        }
+        for (const exception of [
+          'solid-js@2.0.0-rc.15', '@solidjs/web@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15',
+          '@solidjs/compiler@2.0.0-rc.15', '@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50',
+          '@wsagency/radix2solid-primitives@0.1.0-rc.4', '@wsagency/radix2solid-icons@0.1.0-rc.4',
+          '@wsagency/radix2solid-icons-extra@0.1.0-rc.4', '@wsagency/radix2solid-themes@0.1.0-rc.4',
+          '@wsagency/radix2solid-charts@0.1.0-rc.4'
+        ]) assert(workspace.includes(exception), `${archive}: missing exact age exception ${exception}`);
+        assert.doesNotMatch(workspace, /minimumReleaseAge:|playwright|^packages:/m, `${archive}: workspace must not relax the global age gate or carry host-only entries`);
+        assert.match(workspace, /^ {2}'@wsagency\/radix2solid-primitives': "0\.1\.0-rc\.4"$/m, `${archive}: Themes' Primitives dependency must resolve the published version`);
         const manifest: { dependencies: Record<string, string>; devDependencies: Record<string, string> } = JSON.parse(await readFile(resolve(project, 'package.json'), 'utf8'));
         const products = archive.startsWith('charts-') ? ['primitives', 'icons', 'themes', 'charts']
           : archive.startsWith('icons-extra-') ? ['primitives', 'icons', 'themes', 'icons-extra'] : ['primitives', 'icons', 'themes'];
         assert.deepEqual(Object.keys(manifest.dependencies).filter(name => name.startsWith('@wsagency/')).sort(), products.map(name => `@wsagency/radix2solid-${name}`).sort(), `${archive}: unexpected dependencies`);
         for (const name of ['solid-js', '@solidjs/web']) assert.equal(manifest.dependencies[name], '2.0.0-rc.15', `${archive}: ${name} must match the RC15 tuple`);
         assert.equal(manifest.devDependencies['@solidjs/vite-plugin'], '3.0.0-next.50', `${archive}: plugin must match the RC15 tuple`);
-        let candidateVersions: { primitives: string; themes: string } | undefined;
-        if (isCandidate) {
-          const instructions = await readFile(resolve(project, 'CANDIDATE.md'), 'utf8');
-          assert(instructions.includes(sourcePin.commit), `${archive}: candidate instructions must report the exact pinned source commit`);
-          const primitivePath = manifest.dependencies['@wsagency/radix2solid-primitives'];
-          const themesPath = manifest.dependencies['@wsagency/radix2solid-themes'];
-          assert.match(primitivePath!, /^file:\.\/vendor\/[^/]+\.tgz$/);
-          assert.match(themesPath!, /^file:\.\/vendor\/[^/]+\.tgz$/);
-          const primitiveArchive = resolve(project, primitivePath!.slice('file:'.length));
-          const themesArchive = resolve(project, themesPath!.slice('file:'.length));
-          assert.deepEqual((await readdir(resolve(project, 'vendor'))).sort(), [primitiveArchive.split('/').at(-1)!, themesArchive.split('/').at(-1)!].sort(), `${archive}: vendor exactly packed Primitives and Themes`);
-          const primitives = packedManifest(primitiveArchive);
-          const themes = packedManifest(themesArchive);
-          candidateVersions = { primitives: primitives.version, themes: themes.version };
-          assert.equal(primitives.name, '@wsagency/radix2solid-primitives');
-          assert.equal(themes.name, '@wsagency/radix2solid-themes');
-          assert(workspace.includes(`  '@wsagency/radix2solid-primitives': "${primitivePath}"`), `${archive}: Themes override must use the direct identical Primitives tarball`);
-        } else {
-          assert.equal(manifest.dependencies['@wsagency/radix2solid-primitives'], '0.1.0-rc.3', `${archive}: published Primitives must stay on registry rc.3`);
-          assert.equal(manifest.dependencies['@wsagency/radix2solid-themes'], '0.1.0-rc.3', `${archive}: published Themes must stay on registry rc.3`);
-          assert(!(await readdir(project)).includes('vendor'), `${archive}: registry archive must not vendor packages`);
-          assert(workspace.includes(`  '@wsagency/radix2solid-primitives': "0.1.0-rc.3"`), `${archive}: published Themes Primitives override must remain registry rc.3`);
-        }
-        for (const exception of [
-          'solid-js@2.0.0-rc.15', '@solidjs/web@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15',
-          '@solidjs/compiler@2.0.0-rc.15', '@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50',
-          `@wsagency/radix2solid-primitives@${candidateVersions?.primitives ?? '0.1.0-rc.3'}`,
-          '@wsagency/radix2solid-icons@0.1.0-rc.3', '@wsagency/radix2solid-icons-extra@0.1.0-rc.3',
-          `@wsagency/radix2solid-themes@${candidateVersions?.themes ?? '0.1.0-rc.3'}`,
-          '@wsagency/radix2solid-charts@0.1.0-rc.3'
-        ]) assert(workspace.includes(exception), `${archive}: missing exact age exception ${exception}`);
-        assert.doesNotMatch(workspace, /minimumReleaseAge:|playwright|^packages:/m, `${archive}: workspace must not relax the global age gate or carry host-only entries`);
+        for (const name of products) assert.equal(manifest.dependencies[`@wsagency/radix2solid-${name}`], '0.1.0-rc.4', `${archive}: ${name} must use the exact published version`);
+        assert(!(await readdir(project)).includes('vendor'), `${archive}: sandbox must not vendor package tarballs`);
         for (const file of products.flatMap(name => name === 'charts' ? ['LICENSE-charts', 'NOTICE-charts'] : [`LICENSE-${name}`])) await readFile(resolve(project, file));
         await exec('pnpm', ['install', '--no-frozen-lockfile']);
         await exec('pnpm', ['build']);
         for (const name of products) {
-          const installed = JSON.parse(await readFile(resolve(project, `node_modules/@wsagency/radix2solid-${name}/package.json`), 'utf8'));
-          const expectedVersion = isCandidate && name === 'primitives' ? candidateVersions!.primitives
-            : isCandidate && name === 'themes' ? candidateVersions!.themes : '0.1.0-rc.3';
-          assert.equal(installed.version, expectedVersion, `${archive}: installed ${name} version`);
+          const packageName = `@wsagency/radix2solid-${name}`;
+          const installed = JSON.parse(await readFile(resolve(project, `node_modules/${packageName}/package.json`), 'utf8'));
+          assert.equal(installed.version, '0.1.0-rc.4', `${archive}: installed ${name} version`);
         }
+        // The lock must resolve all product packages by version/integrity from the configured npm registry.
         const lock = await readFile(resolve(project, 'pnpm-lock.yaml'), 'utf8');
         const resolved = new Set([...lock.matchAll(/^ {2}'?((?:@solidjs\/(?:web|signals|compiler|babel-plugin|vite-plugin))|solid-js)@([^(':\s]+)/gm)].map(match => `${match[1]}@${match[2]}`));
         assert.deepEqual([...resolved].sort(), ['@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/compiler@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50', '@solidjs/web@2.0.0-rc.15', 'solid-js@2.0.0-rc.15'], `${archive}: incoherent Solid tuple`);
-        if (isCandidate) assert.match(lock, /file:vendor\/[^\s)]+\.tgz/, `${archive}: lockfile must resolve candidate tarballs`);
-        else assert(lock.includes('@wsagency/radix2solid-primitives@0.1.0-rc.3'), `${archive}: lockfile must contain the exact Primitives registry release`);
+        for (const name of products) {
+          const packageName = `@wsagency/radix2solid-${name}`;
+          assert.match(lock, new RegExp(`^  '${packageName}@0\\.1\\.0-rc\\.4':\n    resolution: \\{integrity: sha512-[^}]+\\}`, 'm'), `${archive}: lockfile must resolve ${packageName}@0.1.0-rc.4 with integrity`);
+        }
+        assert.doesNotMatch(lock, /file:vendor\//, `${archive}: lockfile must not resolve local vendor tarballs`);
         const rootRequire = createRequire(resolve(project, 'package.json'));
         const themesRequire = createRequire(resolve(project, 'node_modules/@wsagency/radix2solid-themes/package.json'));
-        assert.equal(await realpath(rootRequire.resolve('@wsagency/radix2solid-primitives')), await realpath(themesRequire.resolve('@wsagency/radix2solid-primitives')), `${archive}: Themes must resolve the same physical Primitives package`);
-        console.log(`PASS ${archive}: isolated ${isCandidate ? 'packed candidate' : 'registry'} install, coherent RC15 tuple and build`);
+        assert.equal(await realpath(rootRequire.resolve('@wsagency/radix2solid-primitives')), await realpath(themesRequire.resolve('@wsagency/radix2solid-primitives')), `${archive}: Themes must resolve the same published Primitives package`);
+        console.log(`PASS ${archive}: isolated registry install, coherent RC15 tuple and build`);
         const family = representatives[archive];
         if (family) await checkRuntime(project, family, log);
       } catch (error) {

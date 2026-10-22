@@ -30,9 +30,9 @@ import { Calendar, DatePicker } from "@wsagency/radix2solid-themes";
 </DatePicker.Root>
 ```
 
-Themes DatePicker is a native Solid extension available only in the unpublished local candidate. It is a styled compound wrapper around the public native DatePicker parts, not an independent picker. `DatePicker.Calendar` MUST compose the primitive DatePicker.Calendar state; use the nested Calendar parts shown here and do not create a second `Calendar.Root`. Each weekday header and week belongs in a `Calendar.Row`; preserve domain-edge `null` slots with inert `role="gridcell" aria-disabled="true"` placeholders, never invented dates. This preserves one value/month model, keyboard cursor, accessible grid, and form bridge.
+Themes DatePicker is a native Solid extension included in published Themes `0.1.0-rc.4`. It is a styled compound wrapper around the public native DatePicker parts, not an independent picker. `DatePicker.Calendar` MUST compose the primitive DatePicker.Calendar state; use the nested Calendar parts shown here and do not create a second `Calendar.Root`. Each weekday header and week belongs in a `Calendar.Row`; preserve domain-edge `null` slots with inert `role="gridcell" aria-disabled="true"` placeholders, never invented dates. This preserves one value/month model, keyboard cursor, accessible grid, and form bridge.
 
-Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+Select the DatePicker CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs exact published Primitives and Themes versions from npm; no local package tarballs are bundled. Extract the archive, run `pnpm install` and `pnpm build`.
 
 ## Styling and composition
 

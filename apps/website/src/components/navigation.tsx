@@ -51,10 +51,8 @@ export function DocumentReferences(props: { path: string }) {
     {!nativeExtension && props.path.startsWith('/primitives/docs/') && typeof metadata.name === 'string' && <a href={`https://github.com/radix-ui/primitives/tree/main/packages/react/${typeof metadata.publishedName === 'string' ? metadata.publishedName : metadata.name}/src`} target="_blank" rel="noopener noreferrer">View original source</a>}
     {!nativeExtension && props.path.startsWith('/themes/docs/components/') && <a href={`https://github.com/radix-ui/themes/blob/main/packages/radix-ui-themes/src/components/${props.path.split('/').at(-1)}.tsx`} target="_blank" rel="noopener noreferrer">View original source</a>}
     {metadata.kind !== 'page' && <>
-      {nativeExtension
-        ? <a href={`${props.path}.md`}>View documentation source</a>
-        : <><a href={`https://github.com/wsagency/radix2solid-web/blob/main/apps/website/data${props.path}.mdx`} target="_blank" rel="noopener noreferrer">View documentation source</a>
-          <a href={`https://github.com/wsagency/radix2solid-web/edit/main/apps/website/data${props.path}.mdx`} target="_blank" rel="noopener noreferrer">Edit documentation</a></>}
+      <a href={`https://github.com/wsagency/radix2solid-web/blob/main/apps/website/data${props.path}.mdx`} target="_blank" rel="noopener noreferrer">View documentation source</a>
+      <a href={`https://github.com/wsagency/radix2solid-web/edit/main/apps/website/data${props.path}.mdx`} target="_blank" rel="noopener noreferrer">Edit documentation</a>
       <a href={`https://github.com/wsagency/${/^\/(?:primitives|themes|charts)\/docs\//.test(props.path) ? 'radix2solid' : 'radix2solid-web'}/issues/new`} target="_blank" rel="noopener noreferrer">Report native issue</a>
     </>}
   </nav>;

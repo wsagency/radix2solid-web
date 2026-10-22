@@ -17,9 +17,9 @@ import { FileDrop } from "@wsagency/radix2solid-themes";
 </FileDrop.Root>
 ```
 
-This wrapper is a native Solid project extension available only in the unpublished local candidate, not an official Radix React component. It preserves the [`FileDrop` Primitives parts and state contract](/primitives/docs/components/file-drop): one Root, exactly one real Input, one Trigger for that input, accepted `readonly File[]`, and the same form and whole-batch UX policy. It adds visual styling, not another chooser, upload service or file-validation boundary.
+This wrapper is a native Solid project extension included in published Themes `0.1.0-rc.4`, not an official Radix React component. It preserves the [`FileDrop` Primitives parts and state contract](/primitives/docs/components/file-drop): one Root, exactly one real Input, one Trigger for that input, accepted `readonly File[]`, and the same form and whole-batch UX policy. It adds visual styling, not another chooser, upload service or file-validation boundary.
 
-Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+Select the FileDrop CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs exact published Primitives and Themes versions from npm; no local package tarballs are bundled. Extract the archive, run `pnpm install` and `pnpm build`.
 
 ## Styling props
 

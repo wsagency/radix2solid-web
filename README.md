@@ -2,24 +2,22 @@
 
 The independent, unofficial native **Solid 2** documentation website for [Radix2Solid](https://github.com/wsagency/radix2solid). This is not a WorkOS product. Original Radix documentation, designs, blog posts and case studies keep their attribution and historical context; they do not endorse this fork.
 
-The site preserves 137 original MDX documents and 151 original routes, and adds 37 native-only documents and 38 native-only routes for Charts, seven Primitives API families and Themes additions: 174 documents, 189 routes plus 404, 278 demo source files and 119 downloadable runnable sandboxes. Calendar, DatePicker and FileDrop are local candidate APIs: their new Primitives and Themes exports are not available from published npm `0.1.0-rc.3`; their nine style-variant archives bundle the actual pinned local packages. The site also includes native interactive examples, Markdown negotiation, heading-aware search, redirects, the Themes playground and historical marketing/example layouts. Website source and issues belong to [wsagency/radix2solid-web](https://github.com/wsagency/radix2solid-web); native package issues belong to [wsagency/radix2solid](https://github.com/wsagency/radix2solid).
+The site preserves 137 original MDX documents and 151 original routes, and adds 37 native-only documents and 38 native-only routes for Charts, seven Primitives API families and Themes additions: 174 documents, 189 routes plus 404, 278 demo source files and 119 downloadable runnable sandboxes. Calendar, DatePicker and FileDrop are included in the published Primitives and Themes `0.1.0-rc.4` release; their nine style-variant archives install those exact npm packages rather than bundling local tarballs. The site also includes native interactive examples, Markdown negotiation, heading-aware search, redirects, the Themes playground and historical marketing/example layouts. Website source and issues belong to [wsagency/radix2solid-web](https://github.com/wsagency/radix2solid-web); native package issues belong to [wsagency/radix2solid](https://github.com/wsagency/radix2solid).
 
 ## Published next-suite release candidate
 
-All five native packages are published on npm as `0.1.0-rc.3` (release candidate, dist-tag `next`):
+All five native packages are published on npm as `0.1.0-rc.4` (release candidate, dist-tag `next`):
 
 | Package | npm |
 |---|---|
-| Primitives | [@wsagency/radix2solid-primitives@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.3) |
-| Themes | [@wsagency/radix2solid-themes@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.3) |
-| Icons | [@wsagency/radix2solid-icons@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.3) |
-| Charts | [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3) |
-| Icons Extra | [@wsagency/radix2solid-icons-extra@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.3) |
+| Primitives | [@wsagency/radix2solid-primitives@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) |
+| Themes | [@wsagency/radix2solid-themes@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.4) |
+| Icons | [@wsagency/radix2solid-icons@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4) |
+| Charts | [@wsagency/radix2solid-charts@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.4) |
+| Icons Extra | [@wsagency/radix2solid-icons-extra@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.4) |
 
-Always pin `@0.1.0-rc.3`; do not use a bare package name or `@latest`. The `latest` tag still points to rc.1 for Primitives, Icons, and Themes and rc.2 for Charts. Icons Extra's `latest` is rc.3, but pin it explicitly as well.
-The published rc.3 installation above remains correct for those published APIs. Calendar, DatePicker and FileDrop are unpublished local-candidate exports and are not installed by the rc.3 commands; use their candidate sandbox downloads only after the web build has packed the exact pinned Primitives and Themes tarballs.
+Always pin `@0.1.0-rc.4`; do not use a bare package name or `@latest`. The `latest` tag still points to rc.1 for Primitives, Icons, and Themes and rc.2 for Charts. Icons Extra's `latest` is rc.3, but pin it explicitly as well.
 
-Each of the nine local candidate archives is generated from the reviewed, committed green Primitives/Themes source at exact candidate SHA `8bb3d8af0b3509638326afb65be22099e3e02cca`. The archives bundle actual packed Primitives and Themes tarballs under `vendor/`, with Themes' Primitives override resolving to the same bundled file. Download the runnable archives from their playground source viewers, extract and run `pnpm install` and `pnpm build`. The generated `CANDIDATE.md` records the source commit. These are local candidate APIs and are not available from npm rc.3.
 
 Install the packages you need. Themes depends on Primitives, so keep its transitive dependency on the same exact version:
 
@@ -30,12 +28,12 @@ overrides:
   '@solidjs/signals': 2.0.0-rc.15
   '@solidjs/compiler': 2.0.0-rc.15
   '@solidjs/babel-plugin': 2.0.0-rc.15
-  '@wsagency/radix2solid-primitives': 0.1.0-rc.3
+  '@wsagency/radix2solid-primitives': 0.1.0-rc.4
 ```
 
 ```sh
-pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3 @wsagency/radix2solid-icons@0.1.0-rc.3 @wsagency/radix2solid-charts@0.1.0-rc.3 @wsagency/radix2solid-icons-extra@0.1.0-rc.3
-npm install -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3 @wsagency/radix2solid-icons@0.1.0-rc.3 @wsagency/radix2solid-charts@0.1.0-rc.3 @wsagency/radix2solid-icons-extra@0.1.0-rc.3
+pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.4 @wsagency/radix2solid-themes@0.1.0-rc.4 @wsagency/radix2solid-icons@0.1.0-rc.4 @wsagency/radix2solid-charts@0.1.0-rc.4 @wsagency/radix2solid-icons-extra@0.1.0-rc.4
+npm install -E @wsagency/radix2solid-primitives@0.1.0-rc.4 @wsagency/radix2solid-themes@0.1.0-rc.4 @wsagency/radix2solid-icons@0.1.0-rc.4 @wsagency/radix2solid-charts@0.1.0-rc.4 @wsagency/radix2solid-icons-extra@0.1.0-rc.4
 ```
 
 The complete Solid 2 RC15 runtime/compiler tuple and Vite plugin are exact:
@@ -45,7 +43,7 @@ pnpm add -E solid-js@2.0.0-rc.15 @solidjs/web@2.0.0-rc.15 @solidjs/signals@2.0.0
 pnpm add -D -E @solidjs/vite-plugin@3.0.0-next.50 vite@8.3.3
 ```
 
-Icons Extra remains optional: its two native folder icons are separate from the original 332. Existing sandboxes use published packages; the nine Calendar, DatePicker and FileDrop style variants include the exact packed local candidate Primitives and Themes distributions, full pinned source SHA instructions, exact tooling and licenses. This website does not publish those local candidate APIs to npm.
+Icons Extra remains optional: its two native folder icons are separate from the original 332. The nine Calendar, DatePicker and FileDrop style variants are available as runnable npm-based archives with exact package pins, complete tooling and licenses.
 
 
 ## Created for WS Agency
@@ -84,7 +82,7 @@ If the pinned source has not been published yet, a real local sibling clone is a
 
 ```sh
 git clone --no-hardlinks ../radix2solid .library
-git -C .library checkout --detach 90f129ec6786c0d46ccca8e261438556db2eb9b7
+git -C .library checkout --detach 4ff4954be95bab5db9004f9a09c744f780f38929
 node scripts/prepare-library.ts
 pnpm install --frozen-lockfile
 pnpm check
@@ -96,9 +94,9 @@ To update the library, review an actual clean library commit, update `library-so
 
 ## Verification scope
 
-`pnpm check` builds real producers, typechecks the site, checks exact HTML/Markdown/document/demo/archive inventories, compiles native documented fences and installation commands, exercises copied guides, independently installs/builds **all 110 actual exported archives**, and runs bootstrap safety, existing worker/script tests and website browser cases in Chromium, Firefox and WebKit. Archive first installs have no pre-existing lock; each normal isolated install creates its own. Package names, declared native/runtime/tool pins and real tarballs remain exact. Archive installation/build coverage is not a claim that every archive received runtime interaction tests.
+`pnpm check` builds the pinned real library producers and website, typechecks the site, checks exact HTML/Markdown/document/demo/archive inventories, compiles native documented fences and installation commands, exercises copied guides, independently installs and builds **all 119 actual exported archives**, and runs bootstrap safety, existing worker/script tests and website browser cases in Chromium, Firefox and WebKit. Archive first installs have no pre-existing lock; each normal isolated install creates its own. Package names, declared native/runtime/tool pins and real tarballs remain exact. Installing/building every archive is distinct from runtime interaction coverage, which uses representative archives listed below.
 
-Runtime interactions reuse representative built archives for Dialog, Toast, Select, Charts, Combobox, Command, Tree, Splitter and Icons Extra in all three engines. This is separate from the 110-archive installation/build count. The checker accepts explicit archive names for bounded local checks; the no-argument CI command still checks every advertised archive.
+Runtime interactions use representative built archives for Dialog, Toast, Select, Charts, Combobox, Command, Tree, Splitter, Icons Extra, Calendar, DatePicker and FileDrop in Chromium, Firefox and WebKit. This is separate from the all-119-archive install/build count. The checker accepts explicit archive names for bounded local checks; the no-argument CI command still checks every advertised archive.
 
 Failed GitHub Actions checks retain only `.artifacts/playwright/` for seven days: browser API traces, failure-only screenshots, error contexts and chart geometry/loading attachments. Trace DOM snapshots and screencast screenshots are disabled because the snapshot observer itself forces early layout; chart attachments retain asset-request timing separately. Private build artifacts and installation credentials are not uploaded. Chart geometry checks reuse the existing SSR-disabled theme control to await native hydration, rather than treating window load as readiness. Startup uses the existing navigation/action budget within the unchanged 30-second test budget, replacing the added five-second startup assertion; the subsequent five-second geometry/font assertions and retries are unchanged.
 

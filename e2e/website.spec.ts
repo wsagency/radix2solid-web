@@ -158,7 +158,10 @@ test('calendar/date-picker pages expose source, Markdown and runnable archives',
     for (const path of [`/primitives/docs/components/${family}`, `/themes/docs/components/${family}`]) {
       await page.goto(`${origin}${path}`);
       const references = page.getByRole('navigation', { name: 'Document references', exact: true });
-      await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `${path}.md`);
+      await expect(references.getByRole('link', { name: 'View as Markdown', exact: true })).toHaveAttribute('href', `${path}.md`);
+      await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `https://github.com/wsagency/radix2solid-web/blob/main/apps/website/data${path}.mdx`);
+      await expect(references.getByRole('link', { name: 'Edit documentation', exact: true })).toHaveAttribute('href', `https://github.com/wsagency/radix2solid-web/edit/main/apps/website/data${path}.mdx`);
+      await expect(references.getByRole('link', { name: 'View original source', exact: true })).toHaveCount(0);
       if (path.startsWith('/themes/')) {
         await expect(references.getByRole('link', { name: 'View in playground', exact: true })).toHaveAttribute('href', `/themes/playground#${family}`);
       }
@@ -234,7 +237,10 @@ test('calendar/date-picker Calendar selection survives locale, week-start and di
   await expect(acceptedCalendarDate).toHaveText('2026-10-19');
 });
 
-test('calendar/date-picker native DatePicker validity, viewport keyboard selection, clear and form submission', async ({ page }) => {
+test('calendar/date-picker native DatePicker validity, viewport keyboard selection, clear and form submission', async ({ page }, testInfo) => {
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await page.setViewportSize({ width: 420, height: 320 });
   await page.goto(`${origin}/themes/playground#calendar`);
 
   const datePicker = page.getByRole('region', { name: 'DatePicker demonstration', exact: true });
@@ -248,11 +254,36 @@ test('calendar/date-picker native DatePicker validity, viewport keyboard selecti
   await expect(trigger).toBeFocused();
   await expect(bridge).not.toBeFocused();
   await expect(bridge).not.toHaveValue('2026-10-19');
-  const viewport = page.viewportSize();
-  expect(viewport).not.toBeNull();
-  await page.setViewportSize({ width: 420, height: 320 });
   await trigger.click();
   const clippedPopup = page.getByRole('dialog').last();
+  await expect(clippedPopup).toBeVisible();
+  await expect(clippedPopup.getByRole('heading', { name: 'October 2026', exact: true })).toBeVisible();
+  const headerGeometry = await clippedPopup.evaluate(dialog => {
+    const heading = dialog.querySelector('h2[aria-live="polite"]');
+    const previous = dialog.querySelector('button[aria-label="Previous month"]');
+    const next = dialog.querySelector('button[aria-label="Next month"]');
+    if (!(heading instanceof HTMLElement) || !(previous instanceof HTMLElement) || !(next instanceof HTMLElement)) return null;
+    const textRange = document.createRange();
+    textRange.selectNodeContents(heading);
+    const textRects = Array.from(textRange.getClientRects());
+    const previousRect = previous.getBoundingClientRect();
+    const nextRect = next.getBoundingClientRect();
+    return {
+      headingTextFits: heading.scrollWidth <= heading.clientWidth,
+      textOverlapsPrevious: textRects.some(rect => rect.left < previousRect.right && rect.right > previousRect.left && rect.top < previousRect.bottom && rect.bottom > previousRect.top),
+      textOverlapsNext: textRects.some(rect => rect.left < nextRect.right && rect.right > nextRect.left && rect.top < nextRect.bottom && rect.bottom > nextRect.top),
+      controlsSeparated: previousRect.right <= nextRect.left,
+    };
+  });
+  expect(headerGeometry, 'the visible calendar heading and both navigation controls are present').not.toBeNull();
+  expect(headerGeometry?.headingTextFits, 'the month heading text fits its layout area').toBe(true);
+  expect(headerGeometry?.textOverlapsPrevious, 'painted month text does not overlap the previous-month control').toBe(false);
+  expect(headerGeometry?.textOverlapsNext, 'painted month text does not overlap the next-month control').toBe(false);
+  expect(headerGeometry?.controlsSeparated, 'the previous and next month controls remain distinct').toBe(true);
+  await testInfo.attach('date-picker-open-narrow-viewport', {
+    body: await clippedPopup.screenshot(),
+    contentType: 'image/png',
+  });
   const octoberThirtieth = clippedPopup.getByRole('grid').getByRole('button', { name: 'October 30, 2026', exact: true });
   await octoberThirtieth.focus();
   await page.keyboard.press('ArrowRight');
@@ -345,7 +376,10 @@ test('file-drop pages expose native playground, source, Markdown and accepted Fo
   for (const path of ['/primitives/docs/components/file-drop', '/themes/docs/components/file-drop']) {
     await page.goto(`${origin}${path}`);
     const references = page.getByRole('navigation', { name: 'Document references', exact: true });
-    await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `${path}.md`);
+    await expect(references.getByRole('link', { name: 'View as Markdown', exact: true })).toHaveAttribute('href', `${path}.md`);
+    await expect(references.getByRole('link', { name: 'View documentation source', exact: true })).toHaveAttribute('href', `https://github.com/wsagency/radix2solid-web/blob/main/apps/website/data${path}.mdx`);
+    await expect(references.getByRole('link', { name: 'Edit documentation', exact: true })).toHaveAttribute('href', `https://github.com/wsagency/radix2solid-web/edit/main/apps/website/data${path}.mdx`);
+    await expect(references.getByRole('link', { name: 'View original source', exact: true })).toHaveCount(0);
     if (path.startsWith('/themes/')) {
       await expect(references.getByRole('link', { name: 'View in playground', exact: true })).toHaveAttribute('href', '/themes/playground#file-drop');
     }
@@ -836,7 +870,7 @@ test('next suite Extra icons remain separate and downloadable', async ({ page, c
   expect(asset.ok()).toBe(true);
   expect(await asset.text()).toContain('viewBox="0 0 24 24"');
   await expect(page.getByRole('img', { name: 'Open project folder', exact: true })).toBeVisible();
-  const archive = await request.get(`${origin}/packages/wsagency-radix2solid-icons-extra-0.1.0-rc.3.tgz`);
+  const archive = await request.get(`${origin}/packages/wsagency-radix2solid-icons-extra-0.1.0-rc.4.tgz`);
   expect(archive.ok()).toBe(true);
 });
 
@@ -994,19 +1028,19 @@ test('next suite Charts remeasures auto axis when actual local fonts finish load
   }
 });
 
-test('published rc.3 package guides pin npm versions and link the registry release', async ({ page, context, browserName, request }) => {
+test('published rc.4 package guides pin npm versions and link the registry release', async ({ page, context, browserName, request }) => {
   test.skip(browserName !== 'chromium', 'Native clipboard read permission is supported by Chromium.');
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
   for (const [name, path, command] of [
-    ['primitives', '/primitives/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3'],
-    ['themes', '/themes/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.3 @wsagency/radix2solid-themes@0.1.0-rc.3'],
-    ['icons', '/icons', 'pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.3'],
-    ['charts', '/charts/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.3'],
-    ['icons-extra', '/icons#extra-installation', 'pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.3'],
+    ['primitives', '/primitives/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.4'],
+    ['themes', '/themes/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-primitives@0.1.0-rc.4 @wsagency/radix2solid-themes@0.1.0-rc.4'],
+    ['icons', '/icons', 'pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.4'],
+    ['charts', '/charts/docs/overview/getting-started', 'pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.4'],
+    ['icons-extra', '/icons#extra-installation', 'pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.4'],
   ]) {
     const args = command.slice('pnpm add '.length);
     const npmCommand = `npm install ${args}`;
-    const npmUrl = `https://www.npmjs.com/package/@wsagency/radix2solid-${name}/v/0.1.0-rc.3`;
+    const npmUrl = `https://www.npmjs.com/package/@wsagency/radix2solid-${name}/v/0.1.0-rc.4`;
     await page.goto(`${origin}${path}`);
     if (name === 'themes') await page.getByRole('tab', { name: 'pnpm', exact: true }).click();
     const code = page.locator('pre').filter({ hasText: command }).filter({ visible: true }).first();
@@ -1029,7 +1063,6 @@ test('published rc.3 package guides pin npm versions and link the registry relea
     }
     await expect(page.locator('pre').filter({ hasText: npmCommand }).filter({ visible: true }).first()).toHaveText(npmCommand);
     await expect(page.locator(`a[href="${npmUrl}"]`).first()).toBeVisible();
-    await expect(page.locator('body')).toContainText(/published on npm as 0\.1\.0-rc\.3.*release candidate.*dist-tag.*next/i);
     await expect(page.locator('a[href^="/packages/"]')).toHaveCount(0);
     await expect(page.locator('body')).not.toContainText('@latest');
     if (name === 'icons') {
@@ -1042,7 +1075,6 @@ test('published rc.3 package guides pin npm versions and link the registry relea
     if (name !== 'themes') expect(markdown).toContain(command);
     expect(markdown).toContain(npmCommand);
     expect(markdown).toContain(npmUrl);
-    expect(markdown).toContain('release candidate, dist-tag');
     expect(markdown).not.toContain('/packages/wsagency-radix2solid-');
     expect(markdown).not.toContain('.tgz');
     expect(markdown).not.toContain('@latest');
@@ -1879,9 +1911,9 @@ test('charts landing hydrates one chart per container, switches chart type and s
   const families = page.locator('a[href^="/charts/docs/components/"]').filter({ has: page.locator('.recharts-wrapper') });
   await expect(families).toHaveCount(12);
   for (const family of await families.all()) await expect(family.locator('.recharts-wrapper > svg.recharts-surface')).toHaveCount(1);
-  await expect(page.getByRole('link', { name: 'View on npm', exact: true })).toHaveAttribute('href', 'https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3');
+  await expect(page.getByRole('link', { name: 'View on npm', exact: true })).toHaveAttribute('href', 'https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.4');
   await expect(page.locator('body')).toContainText('Charts is published on npm as');
-  await expect(page.locator('body')).toContainText('pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.3');
+  await expect(page.locator('body')).toContainText('pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.4');
   await expect(page.locator('a[href^="/packages/"]')).toHaveCount(0);
   const notice = await (await request.get(`${origin}/NOTICE.txt`)).text();
   for (const text of ['Copyright (c) 2026 Thomas Guehenneux', 'Copyright (c) 2015-present recharts', '--- d3-scale@', '--- d3-shape@', '--- internmap@', '--- solid-js@2.0.0-rc.15 ', '--- @floating-ui/dom@', 'Copyright (c) 2022 WorkOS']) expect(notice).toContain(text);

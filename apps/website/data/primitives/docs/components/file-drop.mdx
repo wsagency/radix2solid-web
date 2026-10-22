@@ -12,9 +12,9 @@ import FileDropDemo from "../../../../src/demos/file-drop";
 <HeroContainer><FileDropDemo /></HeroContainer>
 <HeroCodeBlock folder="FileDrop" />
 
-FileDrop is a native Solid 2 project extension, not an official Radix React port. Its APIs are part of the unpublished local candidate and are not in published `0.1.0-rc.3`. See the [Themes FileDrop recipe](/themes/docs/components/file-drop) for a styled compound example.
+FileDrop is a native Solid 2 project extension, not an official Radix React port. Its APIs are included in published Primitives `0.1.0-rc.4` (release candidate, dist-tag `next`); see the [exact npm release](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) and [installation instructions](/primitives/docs/overview/getting-started). The [Themes FileDrop recipe](/themes/docs/components/file-drop) applies the styled compound example.
 
-Only after an exact reviewed, green source commit is pinned and the site build has generated downloads, select this family’s style archive from the Themes playground. Each generated archive contains the actual packed Primitives and Themes tarballs under `vendor/` (Themes uses the same Primitives tarball). Extract it, run `pnpm install` and `pnpm build`; its generated `CANDIDATE.md` records the full source commit. This does not make the exports available from npm `0.1.0-rc.3`.
+Select this family's CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs the exact published Primitives and Themes versions from npm. Extract it, run `pnpm install` and `pnpm build`; the archives do not bundle local package tarballs.
 
 ## Imports and anatomy
 

@@ -93,19 +93,19 @@ export const IconsPanel = () => {
 						</Heading>
 
 						<Text as="p" size="3" mt="3">
-							The original 332 icons are individual native Solid 2 components. Published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.3">@wsagency/radix2solid-icons@0.1.0-rc.3</Link>. This remains a release candidate, not a stable release. The npm `latest` tag still points to rc.1, so pin the exact version.
+							The original 332 icons are individual native Solid 2 components. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4">@wsagency/radix2solid-icons@0.1.0-rc.4</Link>. This remains a release candidate, not a stable release. The npm `latest` tag still points to rc.1, so pin the exact version.
 						</Text>
-						<Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.3" size="2">View the exact npm release</Link>
+						<Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4" size="2">View the exact npm release</Link>
 
 						<CodeBlock.Root mt="3">
 							<CodeBlock.Content>
 								<CodeBlock.Pre>
-									<CodeBlock.Code language="bash">pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.3</CodeBlock.Code>
+									<CodeBlock.Code language="bash">pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.4</CodeBlock.Code>
 								</CodeBlock.Pre>
 								<CodeBlock.CopyButton />
 							</CodeBlock.Content>
 						</CodeBlock.Root>
-            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">npm install -E @wsagency/radix2solid-icons@0.1.0-rc.3</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
+            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">npm install -E @wsagency/radix2solid-icons@0.1.0-rc.4</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
 						<Text as="p" size="2" mt="3">Icons requires <Code>solid-js</Code> and <Code>@solidjs/web</Code> exactly <Code>2.0.0-rc.15</Code>, with matching <Code>@solidjs/signals</Code>, <Code>@solidjs/compiler</Code> and <Code>@solidjs/babel-plugin</Code> versions. For Vite, use <Code>@solidjs/vite-plugin</Code> <Code>3.0.0-next.50</Code>. Follow the <Link href="/themes/docs/overview/getting-started#installation">Solid setup instructions</Link> for the pinned compiler graph; Icons does not require installing Themes.</Text>
 
 						<Text as="p" size="3" mt="4">
@@ -143,9 +143,9 @@ function MyComponent () {
 					</Box>
           <Box class={styles.IconsPanelSectionContent} style={{ "grid-row": "3" }} id="extra-installation" mt="6">
             <Heading as="h3" size="5">Extra icons · optional separate package</Heading>
-            <Text as="p" mt="3">FolderIcon and FolderOpenIcon use a 24×24 viewBox and default to 15 pixels. No dependency on the original Icons package or Themes is required. Published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.3">@wsagency/radix2solid-icons-extra@0.1.0-rc.3</Link>. The npm `latest` tag also points to rc.3, but pin it explicitly.</Text>
-            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.3</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
-            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">npm install -E @wsagency/radix2solid-icons-extra@0.1.0-rc.3</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
+            <Text as="p" mt="3">FolderIcon and FolderOpenIcon use a 24×24 viewBox and default to 15 pixels. No dependency on the original Icons package or Themes is required. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.4">@wsagency/radix2solid-icons-extra@0.1.0-rc.4</Link>. The npm `latest` tag still points to rc.3, but pin it explicitly.</Text>
+            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.4</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
+            <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">npm install -E @wsagency/radix2solid-icons-extra@0.1.0-rc.4</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
             <Text as="p" mt="3">Use the same exact <Link href="/themes/docs/overview/getting-started#installation">Solid 2 RC15 runtime/compiler setup</Link>. Do not install Themes just for icons.</Text>
             <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="tsx">{`import { FolderIcon } from "@wsagency/radix2solid-icons-extra";
 import FolderOpenIcon from "@wsagency/radix2solid-icons-extra/FolderOpenIcon";
