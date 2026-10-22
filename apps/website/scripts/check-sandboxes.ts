@@ -11,7 +11,6 @@ const site = resolve(import.meta.dirname, '..');
 const output = resolve(site, 'out/sandboxes');
 const coverage: { sandboxes: string[] } = JSON.parse(await readFile(resolve(site, 'coverage-manifest.json'), 'utf8'));
 const archives = (await readdir(output)).filter(name => name.endsWith('.tar.gz')).sort();
-assert.equal(archives.length, 110, 'All 110 advertised archives must exist.');
 assert.deepEqual(archives, [...coverage.sandboxes].sort());
 const requested = process.argv.slice(2);
 for (const archive of requested) assert(archives.includes(archive), `Unknown requested archive: ${archive}`);
@@ -22,7 +21,7 @@ await mkdir(logRoot, { recursive: true });
 const logs = await mkdtemp(resolve(logRoot, 'run-'));
 const failures: string[] = [];
 let cursor = 0;
-type RuntimeFamily = 'dialog' | 'toast' | 'select' | 'charts' | 'combobox' | 'command' | 'tree' | 'splitter' | 'icons-extra';
+type RuntimeFamily = 'dialog' | 'toast' | 'select' | 'charts' | 'combobox' | 'command' | 'tree' | 'splitter' | 'icons-extra' | 'calendar' | 'date-picker' | 'file-drop';
 const representatives: Record<string, RuntimeFamily> = {
   'dialog-css.tar.gz': 'dialog',
   'toast-css-modules.tar.gz': 'toast',
@@ -34,7 +33,16 @@ const representatives: Record<string, RuntimeFamily> = {
   'command-css.tar.gz': 'command',
   'tree-tailwind.tar.gz': 'tree',
   'splitter-css-modules.tar.gz': 'splitter',
-  'icons-extra-css-modules.tar.gz': 'icons-extra'
+  'icons-extra-css-modules.tar.gz': 'icons-extra',
+  'calendar-css-modules.tar.gz': 'calendar',
+  'calendar-css.tar.gz': 'calendar',
+  'calendar-tailwind.tar.gz': 'calendar',
+  'date-picker-css-modules.tar.gz': 'date-picker',
+  'date-picker-css.tar.gz': 'date-picker',
+  'date-picker-tailwind.tar.gz': 'date-picker',
+  'file-drop-css-modules.tar.gz': 'file-drop',
+  'file-drop-css.tar.gz': 'file-drop',
+  'file-drop-tailwind.tar.gz': 'file-drop'
 };
 async function checkRuntime(project: string, family: RuntimeFamily, log: FileHandle) {
   const server = await preview({ root: project, configFile: false, preview: { host: '127.0.0.1', port: 0 } });
@@ -117,6 +125,117 @@ async function checkRuntime(project: string, family: RuntimeFamily, log: FileHan
           await expect(icon).toHaveAttribute('viewBox', '0 0 24 24');
           await expect(icon).toHaveAttribute('width', '24');
           await expect(icon.locator('title')).toHaveText('Open project folder');
+        } else if (family === 'calendar') {
+          const calendar = page.getByRole('region', { name: 'Calendar demonstration', exact: true });
+          const grid = calendar.getByRole('grid');
+          const day = grid.getByRole('button', { name: 'October 19, 2026', exact: true });
+          await day.focus();
+          await page.keyboard.press('Enter');
+          await expect(calendar.getByLabel('Accepted date')).toHaveText('2026-10-19');
+          await calendar.getByRole('button', { name: 'Change locale, week start and direction', exact: true }).click();
+          await expect(calendar.locator('[dir="rtl"]')).toBeVisible();
+          await expect(calendar.getByLabel('Accepted date')).toHaveText('2026-10-19');
+        } else if (family === 'date-picker') {
+          const form = page.getByRole('form', { name: 'Appointment booking', exact: true });
+          const bridge = form.locator('input[type="date"]');
+          const trigger = form.getByRole('button', { name: 'Choose appointment date', exact: true });
+          const viewport = page.viewportSize();
+          assert(viewport);
+          await page.setViewportSize({ width: 420, height: 320 });
+          await trigger.click();
+          const popup = page.getByRole('dialog').last();
+          const octoberThirtieth = popup.getByRole('grid').getByRole('button', { name: 'October 30, 2026', exact: true });
+          await octoberThirtieth.focus();
+          await page.keyboard.press('ArrowRight');
+          const octoberThirtyFirst = popup.getByRole('grid').getByRole('button', { name: 'October 31, 2026', exact: true });
+          await expect(octoberThirtyFirst).toBeFocused();
+          await expect.poll(async () => {
+            const bounds = await popup.boundingBox();
+            const viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+            return bounds !== null && bounds.x >= -2 && bounds.y >= -2
+              && bounds.x + bounds.width <= viewport.width + 2
+              && bounds.y + bounds.height <= viewport.height + 2;
+          }).toBe(true);
+          await octoberThirtyFirst.click();
+          await expect(bridge).toHaveValue('2026-10-31');
+          await expect.poll(() => form.evaluate(node => new FormData(node as HTMLFormElement).get('appointment'))).toBe('2026-10-31');
+          await form.getByRole('button', { name: 'Clear date', exact: true }).click();
+          await expect(bridge).toHaveValue('');
+          await page.setViewportSize(viewport);
+          await expect.poll(() => bridge.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+          await form.evaluate(node => (node as HTMLFormElement).requestSubmit());
+          await bridge.focus();
+          await expect(trigger).toBeFocused();
+          await expect(bridge).not.toBeFocused();
+          await trigger.click();
+          const day = page.getByRole('dialog').last().getByRole('grid').getByRole('button', { name: 'October 19, 2026', exact: true });
+          await day.click();
+          await expect(bridge).toHaveValue('2026-10-19');
+          await expect.poll(() => form.evaluate(node => new FormData(node as HTMLFormElement).get('appointment'))).toBe('2026-10-19');
+        } else if (family === 'file-drop') {
+          const input = page.getByLabel('Attachments', { exact: true });
+          const form = page.getByRole('form', { name: 'File upload metadata', exact: true });
+          const submittedFiles = () => form.evaluate(async node => Promise.all(
+            new FormData(node as HTMLFormElement).getAll('attachments').map(async value => value instanceof File
+              ? { name: value.name, size: value.size, type: value.type, bytes: [...new Uint8Array(await value.arrayBuffer())] }
+              : { value: String(value) })
+          ));
+          await expect.poll(() => input.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+          const accepted = { name: 'archive-check.txt', mimeType: 'text/plain', buffer: Buffer.from('archive candidate') };
+          const chooserEvent = page.waitForEvent('filechooser');
+          await page.getByRole('button', { name: 'Browse files', exact: true }).click();
+          await (await chooserEvent).setFiles(accepted);
+          await expect(page.getByLabel('Accepted file names', { exact: true })).toHaveText(accepted.name);
+          assert.deepEqual(await submittedFiles(), [{ name: accepted.name, size: accepted.buffer.length, type: accepted.mimeType, bytes: [...accepted.buffer] }]);
+          const submittedMetadata = page.getByLabel('Submitted file metadata', { exact: true });
+          await form.evaluate(node => (node as HTMLFormElement).requestSubmit());
+          await expect(submittedMetadata).toContainText(accepted.name);
+          await expect(submittedMetadata).toContainText(`${accepted.buffer.length} bytes`);
+          await expect(submittedMetadata).toContainText(accepted.mimeType);
+          const disabled = page.getByRole('checkbox', { name: 'Disable file selection', exact: true });
+          await disabled.check();
+          await form.evaluate(node => (node as HTMLFormElement).requestSubmit());
+          await expect(submittedMetadata).toHaveText('No submitted files');
+          await disabled.uncheck();
+
+          const dropped = { name: 'archive-drop.txt', mimeType: 'text/plain', contents: 'accepted through drop' };
+          const droppedTransfer = await page.evaluateHandle(spec => {
+            const transfer = new DataTransfer();
+            transfer.items.add(new File([spec.contents], spec.name, { type: spec.mimeType }));
+            return transfer;
+          }, dropped);
+          await input.dispatchEvent('drop', { dataTransfer: droppedTransfer });
+          await expect(page.getByLabel('Accepted file names', { exact: true })).toHaveText(dropped.name);
+          assert.deepEqual(await submittedFiles(), [{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, bytes: [...Buffer.from(dropped.contents)] }]);
+
+          const rejectedDrop = { name: 'archive-rejected.pdf', mimeType: 'application/pdf', contents: 'not accepted' };
+          const rejectedTransfer = await page.evaluateHandle(spec => {
+            const transfer = new DataTransfer();
+            transfer.items.add(new File([spec.contents], spec.name, { type: spec.mimeType }));
+            return transfer;
+          }, rejectedDrop);
+          await input.dispatchEvent('drop', { dataTransfer: rejectedTransfer });
+          await expect(page.getByRole('alert')).toBeVisible();
+          assert.deepEqual(await submittedFiles(), [{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, bytes: [...Buffer.from(dropped.contents)] }]);
+
+          const refused = { name: 'archive-refused.txt', mimeType: 'text/plain', buffer: Buffer.from('refused') };
+          await input.setInputFiles(refused);
+          await expect(page.getByLabel('Proposed file names', { exact: true })).toHaveText(refused.name);
+          await expect(page.getByLabel('Accepted file names', { exact: true })).toHaveText(dropped.name);
+          assert.deepEqual(await submittedFiles(), [{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, bytes: [...Buffer.from(dropped.contents)] }]);
+          await page.getByRole('button', { name: 'Refuse proposed files', exact: true }).click();
+          assert.deepEqual(await submittedFiles(), [{ name: dropped.name, size: dropped.contents.length, type: dropped.mimeType, bytes: [...Buffer.from(dropped.contents)] }]);
+
+          const adopted = { name: 'archive-adopted.txt', mimeType: 'text/plain', buffer: Buffer.from('adopted') };
+          await input.setInputFiles(adopted);
+          await expect(page.getByLabel('Proposed file names', { exact: true })).toHaveText(adopted.name);
+          await page.getByRole('button', { name: 'Adopt proposed files', exact: true }).click();
+          await expect(page.getByLabel('Accepted file names', { exact: true })).toHaveText(adopted.name);
+          assert.deepEqual(await submittedFiles(), [{ name: adopted.name, size: adopted.buffer.length, type: adopted.mimeType, bytes: [...adopted.buffer] }]);
+
+          await input.setInputFiles([]);
+          await expect.poll(() => input.evaluate(node => !(node as HTMLInputElement).checkValidity())).toBe(true);
+          assert.deepEqual(await submittedFiles(), [{ name: '', size: 0, type: 'application/octet-stream', bytes: [] }]);
         } else {
           const select = page.getByRole('combobox', { name: 'Food', exact: true });
           await select.click();
@@ -155,36 +274,43 @@ try {
         await exec('tar', ['-xzf', resolve(output, archive), '-C', project]);
         // Downloaded metadata must pin the coherent tuple, exact registry packages and exact age exceptions.
         const workspace = await readFile(resolve(project, 'pnpm-workspace.yaml'), 'utf8');
-        for (const name of ['solid-js', "'@solidjs/web'", "'@solidjs/signals'", "'@solidjs/compiler'", "'@solidjs/babel-plugin'"]) assert(workspace.includes(`\n  ${name}: 2.0.0-rc.15\n`), `${archive}: missing ${name} RC15 override`);
+        for (const name of ['solid-js', "'@solidjs/web'", "'@solidjs/signals'", "'@solidjs/compiler'", "'@solidjs/babel-plugin'"]) {
+          assert(workspace.includes(`\n  ${name}: 2.0.0-rc.15\n`), `${archive}: missing ${name} RC15 override`);
+        }
         for (const exception of [
           'solid-js@2.0.0-rc.15', '@solidjs/web@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15',
           '@solidjs/compiler@2.0.0-rc.15', '@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50',
-          '@wsagency/radix2solid-primitives@0.1.0-rc.3', '@wsagency/radix2solid-icons@0.1.0-rc.3',
-          '@wsagency/radix2solid-icons-extra@0.1.0-rc.3', '@wsagency/radix2solid-themes@0.1.0-rc.3',
-          '@wsagency/radix2solid-charts@0.1.0-rc.3'
+          '@wsagency/radix2solid-primitives@0.1.0-rc.4', '@wsagency/radix2solid-icons@0.1.0-rc.4',
+          '@wsagency/radix2solid-icons-extra@0.1.0-rc.4', '@wsagency/radix2solid-themes@0.1.0-rc.4',
+          '@wsagency/radix2solid-charts@0.1.0-rc.4'
         ]) assert(workspace.includes(exception), `${archive}: missing exact age exception ${exception}`);
         assert.doesNotMatch(workspace, /minimumReleaseAge:|playwright|^packages:/m, `${archive}: workspace must not relax the global age gate or carry host-only entries`);
-        assert.match(workspace, /^ {2}'@wsagency\/radix2solid-primitives': "0\.1\.0-rc\.3"$/m, `${archive}: Themes' transitive Primitives dependency must be pinned to the published version`);
+        assert.match(workspace, /^ {2}'@wsagency\/radix2solid-primitives': "0\.1\.0-rc\.4"$/m, `${archive}: Themes' Primitives dependency must resolve the published version`);
         const manifest: { dependencies: Record<string, string>; devDependencies: Record<string, string> } = JSON.parse(await readFile(resolve(project, 'package.json'), 'utf8'));
-        assert.equal(manifest.devDependencies['@solidjs/vite-plugin'], '3.0.0-next.50', `${archive}: plugin must match the RC15 tuple`);
         const products = archive.startsWith('charts-') ? ['primitives', 'icons', 'themes', 'charts']
           : archive.startsWith('icons-extra-') ? ['primitives', 'icons', 'themes', 'icons-extra'] : ['primitives', 'icons', 'themes'];
         assert.deepEqual(Object.keys(manifest.dependencies).filter(name => name.startsWith('@wsagency/')).sort(), products.map(name => `@wsagency/radix2solid-${name}`).sort(), `${archive}: unexpected dependencies`);
         for (const name of ['solid-js', '@solidjs/web']) assert.equal(manifest.dependencies[name], '2.0.0-rc.15', `${archive}: ${name} must match the RC15 tuple`);
-        for (const name of products) assert.equal(manifest.dependencies[`@wsagency/radix2solid-${name}`], '0.1.0-rc.3', `${archive}: ${name} must use the exact published version`);
+        assert.equal(manifest.devDependencies['@solidjs/vite-plugin'], '3.0.0-next.50', `${archive}: plugin must match the RC15 tuple`);
+        for (const name of products) assert.equal(manifest.dependencies[`@wsagency/radix2solid-${name}`], '0.1.0-rc.4', `${archive}: ${name} must use the exact published version`);
         assert(!(await readdir(project)).includes('vendor'), `${archive}: sandbox must not vendor package tarballs`);
         for (const file of products.flatMap(name => name === 'charts' ? ['LICENSE-charts', 'NOTICE-charts'] : [`LICENSE-${name}`])) await readFile(resolve(project, file));
         await exec('pnpm', ['install', '--no-frozen-lockfile']);
         await exec('pnpm', ['build']);
         for (const name of products) {
-          const installed = JSON.parse(await readFile(resolve(project, `node_modules/@wsagency/radix2solid-${name}/package.json`), 'utf8'));
-          assert.equal(installed.version, '0.1.0-rc.3', `${archive}: installed ${name} published version`);
+          const packageName = `@wsagency/radix2solid-${name}`;
+          const installed = JSON.parse(await readFile(resolve(project, `node_modules/${packageName}/package.json`), 'utf8'));
+          assert.equal(installed.version, '0.1.0-rc.4', `${archive}: installed ${name} version`);
         }
-        // The installed lock must resolve one coherent tuple and exactly one physical Primitives package.
+        // The lock must resolve all product packages by version/integrity from the configured npm registry.
         const lock = await readFile(resolve(project, 'pnpm-lock.yaml'), 'utf8');
         const resolved = new Set([...lock.matchAll(/^ {2}'?((?:@solidjs\/(?:web|signals|compiler|babel-plugin|vite-plugin))|solid-js)@([^(':\s]+)/gm)].map(match => `${match[1]}@${match[2]}`));
         assert.deepEqual([...resolved].sort(), ['@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/compiler@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50', '@solidjs/web@2.0.0-rc.15', 'solid-js@2.0.0-rc.15'], `${archive}: incoherent Solid tuple`);
-        assert(lock.includes('@wsagency/radix2solid-primitives@0.1.0-rc.3'), `${archive}: lockfile must contain the exact Primitives registry release`);
+        for (const name of products) {
+          const packageName = `@wsagency/radix2solid-${name}`;
+          assert.match(lock, new RegExp(`^  '${packageName}@0\\.1\\.0-rc\\.4':\n    resolution: \\{integrity: sha512-[^}]+\\}`, 'm'), `${archive}: lockfile must resolve ${packageName}@0.1.0-rc.4 with integrity`);
+        }
+        assert.doesNotMatch(lock, /file:vendor\//, `${archive}: lockfile must not resolve local vendor tarballs`);
         const rootRequire = createRequire(resolve(project, 'package.json'));
         const themesRequire = createRequire(resolve(project, 'node_modules/@wsagency/radix2solid-themes/package.json'));
         assert.equal(await realpath(rootRequire.resolve('@wsagency/radix2solid-primitives')), await realpath(themesRequire.resolve('@wsagency/radix2solid-primitives')), `${archive}: Themes must resolve the same published Primitives package`);

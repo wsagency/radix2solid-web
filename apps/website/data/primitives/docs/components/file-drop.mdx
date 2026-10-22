@@ -1,0 +1,70 @@
+---
+metaTitle: FileDrop
+metaDescription: Native file input and drop surface with accepted file state and real FormData submission.
+---
+
+import FileDropDemo from "../../../../src/demos/file-drop";
+
+# FileDrop
+
+<Description>A single native file input with a coordinated drop surface, accepted `File[]` state, and browser form participation.</Description>
+
+<HeroContainer><FileDropDemo /></HeroContainer>
+<HeroCodeBlock folder="FileDrop" />
+
+FileDrop is a native Solid 2 project extension, not an official Radix React port. Its APIs are included in published Primitives `0.1.0-rc.4` (release candidate, dist-tag `next`); see the [exact npm release](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) and [installation instructions](/primitives/docs/overview/getting-started). The [Themes FileDrop recipe](/themes/docs/components/file-drop) applies the styled compound example.
+
+Select this family's CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs the exact published Primitives and Themes versions from npm. Extract it, run `pnpm install` and `pnpm build`; the archives do not bundle local package tarballs.
+
+## Imports and anatomy
+
+```tsx
+import { FileDrop } from "@wsagency/radix2solid-primitives";
+
+export default () => <FileDrop.Root name="attachments" accept=".pdf,image/*" multiple>
+  <FileDrop.Input aria-label="Attachments" />
+  <p>Drop files here, or browse.</p>
+  <FileDrop.Trigger aria-label="Browse attachments">Browse</FileDrop.Trigger>
+</FileDrop.Root>;
+```
+
+`Root` owns the one input, accepted file list, accept/count policy, disabled/required state and form association. `Input` is the actual native file input; it must occur exactly once. `Trigger` is a named button that activates that same input. The Root is also the drop target. Do not add a second chooser or replace the native input with a hidden proxy input.
+
+## Root API
+
+| Prop | Type / default | Meaning |
+| --- | --- | --- |
+| `value`, `defaultValue` | `readonly File[]`, default `[]` | Accepted selected files; controlled value is authoritative. |
+| `onValueChange` | `(files: readonly File[]) => void` | Candidate proposal. Parent acceptance/refusal is separate from local policy rejection. |
+| `multiple` | `boolean`, default `false` | Whether one or multiple files are allowed. |
+| `accept` | string | Comma-separated file extensions, MIME types, or supported media wildcards such as `image/*`. |
+| `name`, `form` | `string` | Native successful-field name and optional external form ID. |
+| `required`, `disabled` | `boolean`, default `false` | Native required participation and disabled interaction/form behavior. |
+| `onReject` | `(rejection) => void` | Local rejection with source (`picker`/`drop`), reason and candidate files. |
+
+## Root state attributes
+
+| Attribute | Value / condition |
+| --- | --- |
+| `[data-dragging]` | `"true"` while Root tracks a file drag; `"false"` otherwise. The attribute is always present. |
+| `[data-disabled]` | Present as an empty attribute when Root is disabled; absent otherwise. |
+
+`Input` forwards native input attributes, events and refs, but its `type`, `name`, `form`, `accept`, `multiple`, `required` and `disabled` are owned by Root. `Trigger` is a native `type="button"`; give it a clear accessible name. Form associations from Root are canonical.
+
+## Accepted state and native form data
+
+Accepted state is one `readonly File[]`, and the native input's `FileList` is projected from those accepted files. A named multiple control produces repeated FormData entries, one per accepted file. With no accepted files the browser contributes its native empty-file sentinel when the named control participates; disabled controls contribute no entry. FileDrop can live inside a form or associate with an external form by Root `form` ID.
+
+The component replaces the selection; it does not append. To append, implement that application policy explicitly in the parent: combine the proposal with existing accepted files and pass the resulting array back as controlled `value`. To remove one file, update that controlled array. Do not mutate the native `FileList` as a second source of truth.
+
+Picker and drop candidates are checked as a whole batch against `multiple` and `accept`. A local rejection invokes `onReject`, preserves accepted state and does not partially accept a batch. This is a user-experience filter only. The browser's `accept` hint and client-side checks are not security validation: the server must validate uploaded bytes and authorization. This component does not upload data, sniff content, inspect file contents, recurse into directories, or provide a size-policy engine.
+
+In controlled mode callbacks are proposals. A parent may accept synchronously, adopt later, or refuse. Until props change, the native field and rendered accepted list remain at the last accepted value. Local invalid batches do not emit an accepted value proposal. An empty picker selection is a clear request; cancelling a native chooser usually produces no change event and preserves the accepted value. Dropping an empty file list does not clear selection.
+
+Native picker input/change events are not a private implementation detail; browsers and consumer handlers may observe provisional events from user selection. Same-file reselection depends on browser chooser/event behavior; do not promise that selecting the identical file always produces a new event. Reset restores the captured initial accepted array when the form reset is not cancelled; controlled reset remains a proposal subject to parent acceptance.
+
+## Accessibility, SSR and boundaries
+
+Keep the real input available to assistive technology with a meaningful accessible name and use the provided Trigger for a separately named browse button. Convey allowed types, multiple selection and rejection feedback in surrounding text; report rejection visibly and do not rely on color or drag-only instructions. A keyboard user must be able to reach and activate the Browse button. Dragging is an enhancement, never the only selection path.
+
+Server rendering emits deterministic markup, but browser `File` objects and native chooser contents exist only on the client. No file bytes are transferred by this component. FileDrop does not expose `readOnly`, security validation, upload transport, cancellation detection for protected OS dialogs, directory recursion, or cross-browser guarantees about repeated same-file selection. Synthetic browser files cannot certify actual chooser or protected drag/drop behavior.

@@ -1,0 +1,49 @@
+---
+metaTitle: DatePicker
+metaDescription: A styled Themes date picker built on the native DatePicker, Popover and Calendar composition.
+---
+import { Calendar, DatePicker } from "@wsagency/radix2solid-themes";
+
+# DatePicker
+
+<Description>A styled popup date picker whose state, native form bridge and calendar behavior are supplied by Primitives.</Description>
+
+```tsx live=true
+
+() => <DatePicker.Root size="2" color="indigo" radius="large" variant="surface" name="appointment" required today="2026-10-19" defaultViewMonth="2026-10">
+  <DatePicker.Trigger aria-label="Choose appointment date"><DatePicker.Value placeholder="Choose a date" /></DatePicker.Trigger>
+  <DatePicker.Clear aria-label="Clear date">Clear</DatePicker.Clear>
+  <DatePicker.Portal><DatePicker.Content>
+    <DatePicker.Title>Choose an appointment date</DatePicker.Title>
+    <DatePicker.Description>Select one available day.</DatePicker.Description>
+    <DatePicker.Calendar>
+      <Calendar.Header><Calendar.PrevTrigger aria-label="Previous month">‹</Calendar.PrevTrigger><Calendar.Heading/><Calendar.NextTrigger aria-label="Next month">›</Calendar.NextTrigger></Calendar.Header>
+      <Calendar.Grid>{state => <>
+        <Calendar.Row>{state.weekdays.map(day => <Calendar.HeaderCell weekday={day.index}>{day.shortLabel}</Calendar.HeaderCell>)}</Calendar.Row>
+        {state.weeks.map(week => <Calendar.Row>{week.map(day => day
+          ? <Calendar.Cell date={day.date}><Calendar.Day date={day.date}>{day.date.slice(-2)}</Calendar.Day></Calendar.Cell>
+          : <span role="gridcell" aria-disabled="true" />)}</Calendar.Row>)}
+      </>}</Calendar.Grid>
+    </DatePicker.Calendar>
+  </DatePicker.Content></DatePicker.Portal>
+  <DatePicker.FormControl aria-label="Appointment date" />
+</DatePicker.Root>
+```
+
+Themes DatePicker is a native Solid extension included in published Themes `0.1.0-rc.4`. It is a styled compound wrapper around the public native DatePicker parts, not an independent picker. `DatePicker.Calendar` MUST compose the primitive DatePicker.Calendar state; use the nested Calendar parts shown here and do not create a second `Calendar.Root`. Each weekday header and week belongs in a `Calendar.Row`; preserve domain-edge `null` slots with inert `role="gridcell" aria-disabled="true"` placeholders, never invented dates. This preserves one value/month model, keyboard cursor, accessible grid, and form bridge.
+
+Select the DatePicker CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs exact published Primitives and Themes versions from npm; no local package tarballs are bundled. Extract the archive, run `pnpm install` and `pnpm build`.
+
+## Styling and composition
+
+`Root` adds `size` (`1`, `2`, or `3`), `color`, `radius`, and `variant` (`surface`, `classic`, or `soft`). All native DatePicker props remain available, including independent controlled `value`, `viewMonth`, and `open`, explicit `today`, locale, week start, direction, bounds, unavailability, disabled/read-only, required, and external form ownership. Other compound parts preserve native props, scopes and refs. Themes styling does not change validation or acceptance semantics.
+
+Give each Trigger an explicit accessible name, Content a Title, and useful instructions a Description. Use exactly one `DatePicker.FormControl` as the native date field. When the existing managed `Form` owns validity, compose one matching `Form.Control asChild` around that bridge so the Form owner is the sole custom-validity writer. Keep DatePicker Root and Form.Control `name`/external `form` associations identical; do not add another hidden field or call `setCustomValidity()` yourself.
+
+DatePicker supports inline Calendar composition and popup composition through the existing Popover parts. The separate labeled native `<input type="date">` recipe in the [Primitives DatePicker reference](/primitives/docs/components/date-picker) remains a progressive-enhancement option for native typing and browser submission; do not combine it as a competing value source with the controlled picker. Values are canonical Gregorian date-only strings, not time instants. See the reference for form submission, reset, validity, RTL, locale and SSR details.
+
+## Server rendering and popup portals
+
+The Root and `DatePicker.FormControl` still render the canonical date and native field metadata during SSR. Preserve the existing native `DatePicker.Portal` behavior: portalled popup content is absent from server HTML and mounts after hydration. Do not assume that an initially open portal has popup DOM before hydration or introduce a fallback renderer.
+
+If an initially open popup must appear in server markup and preserve node identity through hydration, compose `DatePicker.Content` inline under `DatePicker.Root` and omit the optional `DatePicker.Portal` in both the server and client trees. Do not switch between inline and portalled composition based on the environment. Themes styling does not change this hydration constraint.

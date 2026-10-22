@@ -9,9 +9,13 @@ metaDescription: Charts release notes.
 
 <Description>Charts release notes.</Description>
 
-## 0.1.0-rc.3 — next-suite release candidate
+## 0.1.0-rc.4 — synchronized next-suite release candidate
 
-Charts is published on npm as 0.1.0-rc.3 (release candidate, dist-tag `next`): [@wsagency/radix2solid-charts@0.1.0-rc.3](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3). Use the exact-version [npm and pnpm installation commands](/charts/docs/overview/getting-started).
+Charts is published as 0.1.0-rc.4 alongside the synchronized native package suite. Its selected public API scope is recorded in the rc.3 release history below; use the current exact-version [npm and pnpm installation commands](/charts/docs/overview/getting-started). This remains a selected adaptation set, not full Recharts parity.
+
+## 0.1.0-rc.3 — next-suite release candidate (historical)
+
+The selected Charts API scope below was first published as 0.1.0-rc.3: [historical package](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.3). For current installation, use the exact-version [npm and pnpm commands](/charts/docs/overview/getting-started).
 
 - Selected Recharts 3.10.1 adaptations **A1–A13**, not the full release: retained controlled Brush drag/data behavior; clearing stale active bars; Sankey accessibility; Legend placement and offset; automatic XAxis height; Pie label radii; stacked all-null Area connections; tooltip payload fallback; floating-point band sizes; polar wrap-around tooltips; custom Label positions; stable rendered-tick reporting; and bar gaps with clamped maximum bar size.
 - Public APIs: `Legend position` and `offset` with exported `CartesianPosition`, default `layout="auto"`; `XAxis height="auto"`; and `Sankey title`, `desc`, and `accessibilityLayer`. See the live [LineChart](/charts/docs/components/line-chart), [BarChart](/charts/docs/components/bar-chart), [Sankey](/charts/docs/components/sankey), and [playground](/themes/playground#charts) examples.

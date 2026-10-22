@@ -19,11 +19,13 @@ function run(command: string, args: string[], cwd = root) {
   if (result.status !== 0) throw new Error(`${command} exited ${result.status}`);
 }
 type PackageManifest = { name: string; version: string };
+const sourcePin: { commit: string } = JSON.parse(await readFile(resolve(root, 'library-source.json'), 'utf8'));
+if (!/^[0-9a-f]{40}$/.test(sourcePin.commit)) throw new Error('Sandboxes require the full pinned library source commit.');
 const packageNames = ['primitives', 'icons', 'icons-extra', 'themes', 'charts'];
 const manifests = new Map<string, PackageManifest>();
 for (const name of packageNames) {
   const manifest: PackageManifest = JSON.parse(await readFile(resolve(library, `packages/${name}/package.json`), 'utf8'));
-  if (manifest.version !== '0.1.0-rc.3') throw new Error(`${manifest.name} must match the published 0.1.0-rc.3 package.`);
+  if (manifest.version !== '0.1.0-rc.4') throw new Error(`${manifest.name} must match the published 0.1.0-rc.4 package.`);
   manifests.set(name, manifest);
 }
 const tarballName = (manifest: PackageManifest) => `${manifest.name.slice(1).replace('/', '-')}-${manifest.version}.tgz`;
@@ -34,6 +36,21 @@ for (const name of packageNames) {
   await cp(resolve(packageOutput, archive), resolve(packageDownloads, archive));
 }
 const primitivesManifest = manifests.get('primitives')!;
+const themesManifest = manifests.get('themes')!;
+const nativeFamilies = ['calendar', 'date-picker', 'file-drop'] as const;
+const packedFiles = (archive: string) => {
+  const result = spawnSync('tar', ['-tzf', resolve(packageOutput, archive)], { encoding: 'utf8' });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`Could not inspect packed archive ${archive}.`);
+  return new Set(result.stdout.split('\n'));
+};
+const primitiveFiles = packedFiles(tarballName(primitivesManifest));
+const themesFiles = packedFiles(tarballName(themesManifest));
+for (const family of nativeFamilies) {
+  if (!primitiveFiles.has(`package/dist/types/${family}/index.d.ts`) || !themesFiles.has(`package/dist/types/components/${family}.d.ts`)) {
+    throw new Error(`Pinned source ${sourcePin.commit} does not contain packed Primitives and Themes ${family} APIs; refusing native archive generation.`);
+  }
+}
 const chartsManifest = manifests.get('charts')!;
 const extraManifest = manifests.get('icons-extra')!;
 const dependencies: Record<string, string> = {
@@ -73,9 +90,21 @@ for await (const entry of glob('*/index.tsx', { cwd: resolve(site, 'src/demos') 
       : name === 'icons-extra' ? { ...dependencies, [extraManifest.name]: extraManifest.version } : dependencies;
     await writeFile(resolve(project, 'package.json'), JSON.stringify({ name: `radix-solid-${name}-${solution}-demo`, private: true, type: 'module', packageManager: 'pnpm@11.5.0', engines: { node: '>=24 <25' }, scripts: { dev: 'vite', build: 'vite build' }, dependencies: projectDependencies, devDependencies: { '@solidjs/vite-plugin': '3.0.0-next.50', vite: '8.3.3', ...(solution === 'tailwind' ? { tailwindcss: '4.3.3', '@tailwindcss/vite': '4.3.3' } : {}) } }, null, 2));
     await writeFile(resolve(project, 'pnpm-workspace.yaml'), workspace);
-    await writeFile(resolve(project, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Radix2Solid native demo</title></head><body><div id="root"></div><script type="module" src="/entry.tsx"></script></body></html>');
     await writeFile(resolve(project, 'vite.config.ts'), `import { defineConfig } from 'vite';\nimport solid from '@solidjs/vite-plugin';\n${solution === 'tailwind' ? "import tailwindcss from '@tailwindcss/vite';\n" : ''}export default defineConfig({ plugins: [solid()${solution === 'tailwind' ? ', tailwindcss()' : ''}], resolve: { dedupe: ['solid-js', '@solidjs/web', '@solidjs/signals'] } });\n`);
     await writeFile(resolve(project, 'entry.tsx'), `import { render } from '@solidjs/web';\nimport { Theme } from '@wsagency/radix2solid-themes';\nimport '@wsagency/radix2solid-themes/styles.css';\n${solution === 'tailwind' ? "import './styles.css';\n" : ''}import Demo from './demo.tsx';\nimport './global.css';\nrender(() => <Theme accentColor="indigo"><Demo /></Theme>, document.getElementById('root')!);\n`);
+    await writeFile(resolve(project, 'index.html'), `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radix2Solid demo</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/entry.tsx"></script>
+  </body>
+</html>
+`);
     await writeFile(resolve(project, 'global.css'), globalCss);
     for (const name of ['primitives', 'icons', 'themes']) await cp(resolve(library, `packages/${name}/LICENSE`), resolve(project, `LICENSE-${name}`));
     if (name === 'charts') for (const file of ['LICENSE', 'NOTICE']) await cp(resolve(library, `packages/charts/${file}`), resolve(project, `${file}-charts`));

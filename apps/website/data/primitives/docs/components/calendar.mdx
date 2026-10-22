@@ -1,0 +1,85 @@
+---
+metaTitle: Calendar
+metaDescription: Native Gregorian date-only calendar with controlled selection, navigation and accessible grid behavior.
+---
+
+import CalendarDemo from "../../../../src/demos/calendar";
+
+# Calendar
+
+<Description>A single-date Gregorian calendar with explicit date-only state, localized labels and keyboard navigation.</Description>
+
+<HeroContainer><CalendarDemo /></HeroContainer>
+<HeroCodeBlock folder="Calendar" />
+
+Calendar is a native Solid 2 project extension, not an official Radix React port. Its APIs are included in published Primitives `0.1.0-rc.4` (release candidate, dist-tag `next`); see the [exact npm release](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) and [installation instructions](/primitives/docs/overview/getting-started). The [Themes Calendar recipe](/themes/docs/components/calendar) applies the Themes wrapper without changing selection behavior.
+
+Select this family's CSS Modules, plain CSS or Tailwind archive from the Themes playground. Each generated archive installs the exact published Primitives and Themes versions from npm. Extract it, run `pnpm install` and `pnpm build`; the archives do not bundle local package tarballs.
+
+## Imports and anatomy
+
+```tsx
+import { Calendar } from "@wsagency/radix2solid-primitives";
+// Alternatively: import * as Calendar from "@wsagency/radix2solid-primitives/calendar";
+
+export default () => <Calendar.Root today="2026-10-19" defaultViewMonth="2026-10" aria-label="Choose a date">
+  <Calendar.Header>
+    <Calendar.PrevTrigger aria-label="Previous month">Previous</Calendar.PrevTrigger>
+    <Calendar.Heading />
+    <Calendar.NextTrigger aria-label="Next month">Next</Calendar.NextTrigger>
+  </Calendar.Header>
+  <Calendar.Grid>{state => <>
+    <Calendar.Row>{state.weekdays.map(day => <Calendar.HeaderCell weekday={day.index}>{day.shortLabel}</Calendar.HeaderCell>)}</Calendar.Row>
+    {state.weeks.map(week => <Calendar.Row>{week.map(day => day
+      ? <Calendar.Cell date={day.date}>
+          <Calendar.Day date={day.date}>{day.date.slice(-2)}</Calendar.Day>
+        </Calendar.Cell>
+      : <span role="gridcell" aria-disabled="true" />)}</Calendar.Row>)}
+  </>}</Calendar.Grid>
+</Calendar.Root>;
+```
+
+`Grid` render props provide localized weekday records (`index`, `shortLabel`, `longLabel`) and six weeks of date records or `null` padding at supported year-domain edges. Keep each `Day` inside its matching `Cell`, so it supplies the accessible date name and selection/current-date state; render null positions as inert `role="gridcell" aria-disabled="true"` placeholders in their week row, never as invented dates.
+
+## Root API
+
+| Prop | Type / default | Meaning |
+| --- | --- | --- |
+| `value`, `defaultValue` | `DateValue \| null`, default `null` | Selected date, `YYYY-MM-DD`; controlled value remains parent-authoritative. |
+| `onValueChange` | `(date: DateValue \| null) => void` | Selection proposal; a callback does not imply the parent accepted it. |
+| `viewMonth`, `defaultViewMonth` | `MonthValue` | Visible Gregorian month, `YYYY-MM`; uncontrolled state initially uses `defaultViewMonth` or the month of the initial value, falling back to explicit `today`. Controlled navigation only proposes a new month. |
+| `onViewMonthChange` | `(month: MonthValue) => void` | Navigation proposal, distinct from selection. |
+| `today` | `DateValue`, required | Explicit date used for current-day semantics; no clock inference. |
+| `locale` | BCP 47 locale, default `en-US` | `Intl` month, weekday, and day labels. |
+| `weekStartsOn` | `0`–`6`, default `0` (Sunday) | First weekday, Sunday through Saturday. |
+| `dir` | `ltr` or `rtl` | Directional keyboard navigation and DOM direction. |
+| `min`, `max` | `DateValue` | Inclusive selectable and navigable bounds. |
+| `isDateUnavailable` | `(date: DateValue) => boolean` | Marks unavailable days; unavailable dates cannot be selected. |
+| `disabled`, `readOnly` | `boolean`, default `false` | Disabled prevents interaction; read-only displays without changing selection. |
+
+`DateValue` is a Gregorian calendar date, not an instant or local `Date`: years are `0001`–`9999`, there is no year zero, and values must be valid `YYYY-MM-DD`. `MonthValue` is `YYYY-MM`. No ambient timezone, locale, or current clock is consulted. Calendar is one-date selection: no ranges, time, alternate calendar systems, or month/year grid.
+
+## Parts
+
+| Part | Responsibility |
+| --- | --- |
+| `Root` | Owns selection, visible month, explicit today, constraints and direction. |
+| `Header`, `Heading` | Navigation region and live month heading. |
+| `PrevTrigger`, `NextTrigger` | Named native buttons; disable at bounds. |
+| `Grid` | Six-week accessible grid with render-prop `weekdays` and `weeks`. |
+| `Row`, `HeaderCell`, `Cell` | Grid rows, localized weekday column headers, and date cells. `HeaderCell` requires a weekday index. |
+| `Day` | Native button with date label, current/selected/unavailable states, roving focus, and date commitment. |
+
+Use `asChild` only with a target that forwards the supplied attributes, event handlers, and ref. Do not remove the accessible grid structure or give weekday cells visual-only labels.
+
+## Selection, navigation and forms
+
+A click or Enter/Space on an available day proposes one selection. Arrow keys move the cursor; they do not commit a new value. `viewMonth` changes independently through previous/next controls or PageUp/PageDown. A controlled parent can accept or refuse selection and month proposals independently; render accepted props rather than assuming callbacks were accepted. Out-of-bounds and unavailable dates cannot be selected. If every date is unavailable, navigation still renders the month and no day is enabled.
+
+Calendar does not create a successful form field. To submit a date, bind `value` to application state and render an explicitly named native date input or another deliberate form representation. Do not submit a display label as the canonical date.
+
+## Keyboard, accessibility and SSR
+
+The grid is labeled by the live month heading. Weekday headers expose localized full names, and each day button has a localized date name; `aria-current="date"` identifies the supplied `today`. Roving focus follows the cursor. Left/Right move one day (reversed in RTL), Up/Down one week, Home/End to the first/last day of the displayed week, PageUp/PageDown by month, and Shift+PageUp/PageDown by year. Navigation respects bounds, does not wrap, and selection remains separate from focus. Native buttons retain normal focus semantics.
+
+Server output uses deterministic IDs and explicit `today`/locale inputs and does not infer the current time or measure layout. A popup composition must use the existing Popover layer and maintain a visible focus target; Calendar itself is inline and nonmodal. Browser interaction checks are not blanket assistive-technology certification.

@@ -80,7 +80,7 @@ export const IconsHero = () => {
 									Open in Figma
 								</>
               })}</Button>
-							<input readonly onClick={event => event.currentTarget.select()} value="pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.3" style={{
+							<input readonly onClick={event => event.currentTarget.select()} value="pnpm add -E @wsagency/radix2solid-icons@0.1.0-rc.4" style={{
               "text-align": "center",
               "min-height": "40px",
               "min-width": 0 as const,
