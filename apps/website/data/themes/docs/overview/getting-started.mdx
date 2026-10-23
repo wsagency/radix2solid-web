@@ -19,7 +19,7 @@ Getting up and running is quick and easy.
 
 ### 1. Install Radix Themes
 
-Primitives and Themes are published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): [Primitives](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) and [Themes](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.4). These are release candidates, not stable releases. The `latest` tag still points to rc.1 for both packages; use the exact-version install commands below. Themes depends on Primitives, so map its transitive dependency to the same npm version. The packages require `solid-js` and `@solidjs/web` `2.0.0-rc.15` with matching signals/compiler/babel packages, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. With pnpm, add to `pnpm-workspace.yaml`:
+Primitives and Themes are published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): [Primitives](https://www.npmjs.com/package/@wsagency/radix2solid-primitives/v/0.1.0-rc.4) and [Themes](https://www.npmjs.com/package/@wsagency/radix2solid-themes/v/0.1.0-rc.4). These are release candidates, not stable releases. The commands below pin the exact version for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently. Themes depends on Primitives, so map its transitive dependency to the same npm version. The packages require `solid-js` and `@solidjs/web` `2.0.0-rc.15` with matching signals/compiler/babel packages, compiled by `@solidjs/vite-plugin` `3.0.0-next.50`. With pnpm, add to `pnpm-workspace.yaml`:
 
 ```yaml
 overrides:

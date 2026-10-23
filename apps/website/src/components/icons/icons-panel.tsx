@@ -93,7 +93,7 @@ export const IconsPanel = () => {
 						</Heading>
 
 						<Text as="p" size="3" mt="3">
-							The original 332 icons are individual native Solid 2 components. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4">@wsagency/radix2solid-icons@0.1.0-rc.4</Link>. This remains a release candidate, not a stable release. The npm `latest` tag still points to rc.1, so pin the exact version.
+							The original 332 icons are individual native Solid 2 components. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4">@wsagency/radix2solid-icons@0.1.0-rc.4</Link>. This remains a release candidate, not a stable release. The visible install commands pin this exact version for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently.
 						</Text>
 						<Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons/v/0.1.0-rc.4" size="2">View the exact npm release</Link>
 
@@ -143,7 +143,7 @@ function MyComponent () {
 					</Box>
           <Box class={styles.IconsPanelSectionContent} style={{ "grid-row": "3" }} id="extra-installation" mt="6">
             <Heading as="h3" size="5">Extra icons · optional separate package</Heading>
-            <Text as="p" mt="3">FolderIcon and FolderOpenIcon use a 24×24 viewBox and default to 15 pixels. No dependency on the original Icons package or Themes is required. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.4">@wsagency/radix2solid-icons-extra@0.1.0-rc.4</Link>. The npm `latest` tag still points to rc.3, but pin it explicitly.</Text>
+            <Text as="p" mt="3">FolderIcon and FolderOpenIcon use a 24×24 viewBox and default to 15 pixels. No dependency on the original Icons package or Themes is required. Published on npm as 0.1.0-rc.4 (release candidate, dist-tag `next`): <Link href="https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.4">@wsagency/radix2solid-icons-extra@0.1.0-rc.4</Link>. The install commands below pin this exact release for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently.</Text>
             <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">pnpm add -E @wsagency/radix2solid-icons-extra@0.1.0-rc.4</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
             <CodeBlock.Root mt="3"><CodeBlock.Content><CodeBlock.Pre><CodeBlock.Code language="bash">npm install -E @wsagency/radix2solid-icons-extra@0.1.0-rc.4</CodeBlock.Code></CodeBlock.Pre><CodeBlock.CopyButton /></CodeBlock.Content></CodeBlock.Root>
             <Text as="p" mt="3">Use the same exact <Link href="/themes/docs/overview/getting-started#installation">Solid 2 RC15 runtime/compiler setup</Link>. Do not install Themes just for icons.</Text>
