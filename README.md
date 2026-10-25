@@ -57,6 +57,7 @@ The WS Agency logo is trademark/brand artwork excluded from the software MIT lic
 ### Contributing and credit
 
 Website issues and pull requests belong in [radix2solid-web](https://github.com/wsagency/radix2solid-web); native package contributions belong in [radix2solid](https://github.com/wsagency/radix2solid). GitHub credits real accepted commits merged into the default branch when their author email is associated with the author's account; use your own verified account email or GitHub-provided noreply address. Add `Co-authored-by` only for someone who actually contributed, using their real identity.
+Write all new project-authored prose, comments, and instructions in English; preserve localized test/demo data and original upstream/license text.
 
 Repository owners can invite collaborators through repository Settings to grant access. That invitation is separate from contributor credit and is not required to submit a fork pull request.
 
