@@ -16,7 +16,7 @@ All five native packages are published on npm as `0.1.0-rc.4` (release candidate
 | Charts | [@wsagency/radix2solid-charts@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-charts/v/0.1.0-rc.4) |
 | Icons Extra | [@wsagency/radix2solid-icons-extra@0.1.0-rc.4](https://www.npmjs.com/package/@wsagency/radix2solid-icons-extra/v/0.1.0-rc.4) |
 
-Always pin `@0.1.0-rc.4`; do not use a bare package name or `@latest`. The `latest` tag still points to rc.1 for Primitives, Icons, and Themes and rc.2 for Charts. Icons Extra's `latest` is rc.3, but pin it explicitly as well.
+These setup examples keep `0.1.0-rc.4` pinned for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently.
 
 
 Install the packages you need. Themes depends on Primitives, so keep its transitive dependency on the same exact version:
@@ -57,6 +57,7 @@ The WS Agency logo is trademark/brand artwork excluded from the software MIT lic
 ### Contributing and credit
 
 Website issues and pull requests belong in [radix2solid-web](https://github.com/wsagency/radix2solid-web); native package contributions belong in [radix2solid](https://github.com/wsagency/radix2solid). GitHub credits real accepted commits merged into the default branch when their author email is associated with the author's account; use your own verified account email or GitHub-provided noreply address. Add `Co-authored-by` only for someone who actually contributed, using their real identity.
+Write all new project-authored prose, comments, and instructions in English; preserve localized test/demo data and original upstream/license text.
 
 Repository owners can invite collaborators through repository Settings to grant access. That invitation is separate from contributor credit and is not required to submit a fork pull request.
 

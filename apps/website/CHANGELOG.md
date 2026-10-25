@@ -1,5 +1,9 @@
 # Changelog
 
+## Exact-version guidance
+
+- Keep install instructions, code samples, and runnable sandboxes pinned to exact `0.1.0-rc.4` package versions for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently.
+
 ## 0.1.0-rc.4 — next-suite release candidate
 
 - Publish Primitives, Themes, Icons, Charts and Icons Extra as `0.1.0-rc.4` from the source pinned at `4ff4954be95bab5db9004f9a09c744f780f38929`; keep `next` on the release candidate and leave each package's existing `latest` version unchanged.
