@@ -1916,7 +1916,7 @@ test('charts landing hydrates one chart per container, switches chart type and s
   await expect(page.locator('body')).toContainText('pnpm add -E @wsagency/radix2solid-charts@0.1.0-rc.4');
   await expect(page.locator('a[href^="/packages/"]')).toHaveCount(0);
   const notice = await (await request.get(`${origin}/NOTICE.txt`)).text();
-  for (const text of ['Copyright (c) 2026 Thomas Guehenneux', 'Copyright (c) 2015-present recharts', '--- d3-scale@', '--- d3-shape@', '--- internmap@', '--- solid-js@2.0.0-rc.15 ', '--- @floating-ui/dom@', 'Copyright (c) 2022 WorkOS']) expect(notice).toContain(text);
+  for (const text of ['Copyright (c) 2026 Thomas Guehenneux', 'Copyright (c) 2015-present recharts', '--- d3-scale@', '--- d3-shape@', '--- internmap@', '--- solid-js@2.0.0-rc.19 ', '--- @floating-ui/dom@', 'Copyright (c) 2022 WorkOS']) expect(notice).toContain(text);
   await page.goto(`${origin}/charts/docs/overview/introduction`);
   await expect(page.getByRole('heading', { name: 'Licensing', exact: true })).toBeVisible();
   expect(errors).toEqual([]);

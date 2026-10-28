@@ -23,8 +23,13 @@ jobs:
         with:
           node-version: 24.21.0
           cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .artifacts/public-rc4-tarballs
+          key: public-rc4-v1-${{ runner.os }}-${{ hashFiles('apps/website/scripts/public-rc4-archives.ts') }}
       - run: node scripts/prepare-library.ts
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @radix-solid/website prepare:public-archives
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm check
       - name: Retain browser failure evidence

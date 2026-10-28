@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, open, readFile, readdir, rm, realpath, type FileHandle } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { chromium, firefox, webkit, expect } from '@playwright/test';
 import { preview } from 'vite';
 
@@ -279,19 +279,29 @@ try {
         }
         for (const exception of [
           'solid-js@2.0.0-rc.15', '@solidjs/web@2.0.0-rc.15', '@solidjs/signals@2.0.0-rc.15',
-          '@solidjs/compiler@2.0.0-rc.15', '@solidjs/babel-plugin@2.0.0-rc.15', '@solidjs/vite-plugin@3.0.0-next.50',
-          '@wsagency/radix2solid-primitives@0.1.0-rc.4', '@wsagency/radix2solid-icons@0.1.0-rc.4',
-          '@wsagency/radix2solid-icons-extra@0.1.0-rc.4', '@wsagency/radix2solid-themes@0.1.0-rc.4',
-          '@wsagency/radix2solid-charts@0.1.0-rc.4'
+          '@solidjs/compiler@2.0.0-rc.15', '@solidjs/compiler-darwin-arm64@2.0.0-rc.15',
+          '@solidjs/compiler-darwin-x64@2.0.0-rc.15', '@solidjs/compiler-linux-arm64-gnu@2.0.0-rc.15',
+          '@solidjs/compiler-linux-x64-gnu@2.0.0-rc.15', '@solidjs/compiler-wasm32-wasi@2.0.0-rc.15',
+          '@solidjs/compiler-win32-x64-msvc@2.0.0-rc.15', '@solidjs/babel-plugin@2.0.0-rc.15',
+          '@solidjs/vite-plugin@3.0.0-next.50', '@wsagency/radix2solid-primitives@0.1.0-rc.4',
+          '@wsagency/radix2solid-icons@0.1.0-rc.4', '@wsagency/radix2solid-icons-extra@0.1.0-rc.4',
+          '@wsagency/radix2solid-themes@0.1.0-rc.4', '@wsagency/radix2solid-charts@0.1.0-rc.4'
         ]) assert(workspace.includes(exception), `${archive}: missing exact age exception ${exception}`);
         assert.doesNotMatch(workspace, /minimumReleaseAge:|playwright|^packages:/m, `${archive}: workspace must not relax the global age gate or carry host-only entries`);
         assert.match(workspace, /^ {2}'@wsagency\/radix2solid-primitives': "0\.1\.0-rc\.4"$/m, `${archive}: Themes' Primitives dependency must resolve the published version`);
-        const manifest: { dependencies: Record<string, string>; devDependencies: Record<string, string> } = JSON.parse(await readFile(resolve(project, 'package.json'), 'utf8'));
+        const manifest: { dependencies: Record<string, string>; devDependencies: Record<string, string>; packageManager: string; engines: { node: string } } = JSON.parse(await readFile(resolve(project, 'package.json'), 'utf8'));
+        assert.equal(manifest.packageManager, 'pnpm@11.5.0', `${archive}: package manager`);
+        assert.equal(manifest.engines.node, '>=24 <25', `${archive}: Node range`);
         const products = archive.startsWith('charts-') ? ['primitives', 'icons', 'themes', 'charts']
           : archive.startsWith('icons-extra-') ? ['primitives', 'icons', 'themes', 'icons-extra'] : ['primitives', 'icons', 'themes'];
         assert.deepEqual(Object.keys(manifest.dependencies).filter(name => name.startsWith('@wsagency/')).sort(), products.map(name => `@wsagency/radix2solid-${name}`).sort(), `${archive}: unexpected dependencies`);
         for (const name of ['solid-js', '@solidjs/web']) assert.equal(manifest.dependencies[name], '2.0.0-rc.15', `${archive}: ${name} must match the RC15 tuple`);
         assert.equal(manifest.devDependencies['@solidjs/vite-plugin'], '3.0.0-next.50', `${archive}: plugin must match the RC15 tuple`);
+        assert.equal(manifest.devDependencies.vite, '8.3.3', `${archive}: Vite must match the published archive tuple`);
+        if (archive.includes('-tailwind')) {
+          assert.equal(manifest.devDependencies.tailwindcss, '4.3.3', `${archive}: Tailwind must match the published archive tuple`);
+          assert.equal(manifest.devDependencies['@tailwindcss/vite'], '4.3.3', `${archive}: Tailwind Vite plugin must match the published archive tuple`);
+        }
         for (const name of products) assert.equal(manifest.dependencies[`@wsagency/radix2solid-${name}`], '0.1.0-rc.4', `${archive}: ${name} must use the exact published version`);
         assert(!(await readdir(project)).includes('vendor'), `${archive}: sandbox must not vendor package tarballs`);
         for (const file of products.flatMap(name => name === 'charts' ? ['LICENSE-charts', 'NOTICE-charts'] : [`LICENSE-${name}`])) await readFile(resolve(project, file));
@@ -314,6 +324,31 @@ try {
         const rootRequire = createRequire(resolve(project, 'package.json'));
         const themesRequire = createRequire(resolve(project, 'node_modules/@wsagency/radix2solid-themes/package.json'));
         assert.equal(await realpath(rootRequire.resolve('@wsagency/radix2solid-primitives')), await realpath(themesRequire.resolve('@wsagency/radix2solid-primitives')), `${archive}: Themes must resolve the same published Primitives package`);
+        if (products.includes('charts')) {
+          const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
+          const chartsNotice = normalize(await readFile(resolve(project, 'NOTICE-charts'), 'utf8'));
+          const d3Licenses = new Map<string, string>();
+          const visitD3 = async (from: string, name: string): Promise<void> => {
+            const lookup = createRequire(resolve(from, 'package.json')).resolve.paths(name) ?? [];
+            let manifestPath: string | undefined;
+            for (const directory of lookup) {
+              try {
+                manifestPath = await realpath(resolve(directory, name, 'package.json'));
+                break;
+              } catch {}
+            }
+            assert(manifestPath, `${archive}: cannot resolve installed ${name} from the published Charts package`);
+            const manifest: { name: string; version: string; dependencies?: Record<string, string> } = JSON.parse(await readFile(manifestPath, 'utf8'));
+            const id = `${manifest.name}@${manifest.version}`;
+            if (d3Licenses.has(id)) return;
+            d3Licenses.set(id, normalize(await readFile(resolve(dirname(manifestPath), 'LICENSE'), 'utf8')));
+            for (const dependency of Object.keys(manifest.dependencies ?? {})) await visitD3(dirname(manifestPath), dependency);
+          };
+          const chartsPackage = await realpath(resolve(project, 'node_modules/@wsagency/radix2solid-charts'));
+          await visitD3(chartsPackage, 'd3-scale');
+          await visitD3(chartsPackage, 'd3-shape');
+          for (const [id, license] of d3Licenses) assert(chartsNotice.includes(license), `${archive}: published Charts NOTICE lacks the resolved verbatim LICENSE of ${id}`);
+        }
         console.log(`PASS ${archive}: isolated registry install, coherent RC15 tuple and build`);
         const family = representatives[archive];
         if (family) await checkRuntime(project, family, log);

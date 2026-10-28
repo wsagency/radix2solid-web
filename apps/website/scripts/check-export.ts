@@ -1,13 +1,19 @@
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, globSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { dirname, resolve } from 'node:path';
+import { existsSync, globSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { unified } from 'unified';
 import rehypeParse from 'rehype-parse';
-import { select, selectAll } from 'hast-util-select';
+import { selectAll } from 'hast-util-select';
 import { resolveRedirect } from '../worker/redirects.ts';
 import type { SearchRecord } from './build-search-index.ts';
+import {
+  publicArchiveFileName,
+  publicArchivePins,
+  publicChartsD3Packages,
+  readPublicArchiveMember,
+  verifyPublicArchive,
+  type VerifiedPublicArchive,
+} from './public-rc4-archives.ts';
 
 const output = resolve(import.meta.dirname, '../out');
 const { routePaths } = await import(new URL('../dist/server/entry-server.js', import.meta.url).href) as typeof import('../src/entry-server.js');
@@ -39,62 +45,59 @@ for (const path of upstreamRoutes) if (!routePaths.includes(path)) errors.add(`m
 for (const path of nativeRoutes) if (upstreamRoutes.has(path) || !routePaths.includes(path)) errors.add(`invalid native route: ${path}`);
 for (const path of routePaths) if (!upstreamRoutes.has(path) && !nativeRoutes.has(path)) errors.add(`unexpected native route: ${path}`);
 const markdownFiles = new Set([...expected].filter(file => file !== '404.html').map(file => file.replace(/\.html$/, '.md')));
-// Public downloads use the actual packed names of the five prepared native packages.
-const packageFiles = ['primitives', 'icons', 'themes', 'charts', 'icons-extra'].map(name => {
-  const manifest: { name: string; version: string } = JSON.parse(readFileSync(resolve(import.meta.dirname, `../../../.library/packages/${name}/package.json`), 'utf8'));
-  return `packages/${manifest.name.slice(1).replace('/', '-')}-${manifest.version}.tgz`;
-});
+// Public download names and bytes are pinned to the five published RC4 registry archives.
+const packageFiles = publicArchivePins.map(pin => `packages/${publicArchiveFileName(pin)}`);
 const publicFiles = new Set(['_headers', 'search-index.json', 'NOTICE.txt', 'WEBSITE-LICENSE.txt', 'favicon.png', 'favicon-black.svg', 'favicon-white.svg', 'icons-extra/folder.svg', 'icons-extra/folder-open.svg', ...packageFiles]);
-for (const file of packageFiles) if (!existsSync(resolve(output, file))) errors.add(`missing package download: out/${file}`);
-// D3 license closure: the downloadable Charts tarball imports D3 as a dependency and ships its attribution, so
-// its license files carry every resolved D3 package's own LICENSE verbatim and keep the solid-recharts and
-// Recharts MIT notices. NOTICE.txt coverage of the site bundle is checked against the runtime graph below.
-const chartsRoot = resolve(import.meta.dirname, '../../../.library/packages/charts');
+const verifiedPackages = new Map<string, VerifiedPublicArchive>();
+for (const pin of publicArchivePins) {
+  const file = `packages/${publicArchiveFileName(pin)}`;
+  const path = resolve(output, file);
+  if (!existsSync(path)) {
+    errors.add(`missing package download: out/${file}`);
+    continue;
+  }
+  try {
+    await verifyPublicArchive(path, pin).then(archive => verifiedPackages.set(pin.name.replace('@wsagency/radix2solid-', ''), archive));
+  } catch {
+    errors.add(`invalid public RC4 package download: out/${file}`);
+  }
+}
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
 const notice = normalize(readFileSync(resolve(output, 'NOTICE.txt'), 'utf8'));
-const chartsTarball = resolve(output, packageFiles[3]);
-const chartsLicenseFiles = existsSync(chartsTarball)
-  ? execFileSync('tar', ['-tzf', chartsTarball], { encoding: 'utf8' }).split('\n').filter(member => /^package\/(?:LICEN[CS]E|NOTICE)[^/]*$/i.test(member))
-    .map(member => normalize(execFileSync('tar', ['-xzOf', chartsTarball, member], { encoding: 'utf8' })))
+const chartsArchive = verifiedPackages.get('charts');
+const chartsLicenseFiles = chartsArchive
+  ? [...chartsArchive.members].filter(member => /^package\/(?:LICEN[CS]E|NOTICE)[^/]*$/i.test(member))
+    .map(member => normalize(readPublicArchiveMember(chartsArchive, member).toString('utf8')))
   : [];
 const chartsLicense = chartsLicenseFiles.join(' ');
 if (!/Copyright \(c\) 2026 Thomas Guehenneux/.test(chartsLicense) || !/Copyright \(c\) 2015-present recharts/.test(chartsLicense)) errors.add('packed Charts LICENSE lost the solid-recharts or Recharts MIT notice');
-// The site bundles Charts, so NOTICE.txt reproduces every headed section of the packed license files verbatim.
+// The site bundles Charts, so NOTICE.txt reproduces every headed section from the exact published RC4 archive.
 for (const section of chartsLicenseFiles.flatMap(file => file.split(/--- .+? ---/).slice(1)).map(part => part.trim()).filter(Boolean)) {
   if (!notice.includes(section)) errors.add(`NOTICE.txt lacks packed Charts license text: ${section.slice(0, 60)}…`);
 }
 const chartsMit = chartsLicenseFiles.find(text => text.includes('Thomas Guehenneux'))?.split(/--- .+? ---/)[0].trim();
 if (chartsMit && !notice.includes(chartsMit)) errors.add('NOTICE.txt lacks the packed Charts MIT LICENSE');
-const extraTarball = resolve(output, packageFiles[4]);
-if (existsSync(extraTarball)) {
-  const extraLicense = normalize(execFileSync('tar', ['-xzOf', extraTarball, 'package/LICENSE'], { encoding: 'utf8' }));
+const chartsNotice = chartsArchive?.members.has('package/NOTICE')
+  ? readPublicArchiveMember(chartsArchive, 'package/NOTICE').toString('utf8') : '';
+const chartsD3Packages = [...chartsNotice.matchAll(/^--- ([\w-]+@[\d.]+) \(ISC,/gm)].map(match => match[1]).sort();
+if (JSON.stringify(chartsD3Packages) !== JSON.stringify([...publicChartsD3Packages].sort())) {
+  errors.add('packed Charts NOTICE differs from the pinned RC4 D3 license closure');
+}
+const extraArchive = verifiedPackages.get('icons-extra');
+if (extraArchive) {
+  const extraLicense = normalize(readPublicArchiveMember(extraArchive, 'package/LICENSE').toString('utf8'));
   if (!notice.includes(extraLicense)) errors.add('NOTICE.txt lacks the packed Extra icons LICENSE');
   for (const asset of ['folder', 'folder-open']) {
     const svg = readFileSync(resolve(output, `icons-extra/${asset}.svg`), 'utf8');
-    if (!svg.includes('viewBox="0 0 24 24"')) errors.add(`Extra icon ${asset} lost its native viewBox`);
-    if (svg !== execFileSync('tar', ['-xzOf', extraTarball, `package/icons/${asset}.svg`], { encoding: 'utf8' })) errors.add(`Extra icon ${asset} download differs from its package`);
+    if (!svg.includes('viewBox=\"0 0 24 24\"')) errors.add(`Extra icon ${asset} lost its native viewBox`);
+    if (svg !== readPublicArchiveMember(extraArchive, `package/icons/${asset}.svg`).toString('utf8')) errors.add(`Extra icon ${asset} download differs from its package`);
   }
 }
-const d3Packages = new Map<string, string>();
-const visit = (from: string, name: string) => {
-  // D3 `exports` hide `./package.json`, so walk Node's node_modules lookup paths; realpath follows pnpm links.
-  const lookup = createRequire(resolve(from, 'package.json')).resolve.paths(name) ?? [];
-  const found = lookup.map(directory => resolve(directory, name, 'package.json')).find(path => existsSync(path));
-  if (!found) { errors.add(`cannot resolve ${name} from ${from}`); return; }
-  const manifestPath = realpathSync(found);
-  const manifest: { name: string; version: string; dependencies?: Record<string, string> } = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const id = `${manifest.name}@${manifest.version}`;
-  if (d3Packages.has(id)) return;
-  d3Packages.set(id, normalize(readFileSync(resolve(manifestPath, '../LICENSE'), 'utf8')));
-  for (const dependency of Object.keys(manifest.dependencies ?? {})) visit(dirname(manifestPath), dependency);
-};
-for (const name of ['d3-scale', 'd3-shape']) visit(chartsRoot, name);
-for (const [id, license] of d3Packages) if (!chartsLicense.includes(license)) errors.add(`packed Charts LICENSE/NOTICE files lack the verbatim LICENSE of ${id}`);
 // Every package whose code reaches the client chunks (written by the runtime-graph Vite plugin) has a
-// `--- <id> ` section in NOTICE.txt carrying its own license file verbatim. solid-js and @solidjs/web 2.0.0-rc.15
-// publish no license file; their sections reproduce the solidjs/solid LICENSE at 4937f0a2bfddd45a65738c189075aff577530073
-// (the commit both rc.15 tags point to), verified against that file's SHA-256.
-const unlicensedPackages = new Map(['solid-js@2.0.0-rc.15', '@solidjs/web@2.0.0-rc.15'].map(id => [id, '59a76ed2f4a3ebe8d20a58869ef9c09420f796aa179420c8fb916f5557defc9b']));
+// `--- <id> ` section in NOTICE.txt carrying its own license file verbatim. solid-js and @solidjs/web 2.0.0-rc.19
+// publish no license file; their sections reproduce the solidjs/solid LICENSE at the Solid RC19 gitHead
+// d2323b077c7dda32ebced7843c2ce2b788a91e8d, verified against that file's SHA-256.
+const unlicensedPackages = new Map(['solid-js@2.0.0-rc.19', '@solidjs/web@2.0.0-rc.19'].map(id => [id, '59a76ed2f4a3ebe8d20a58869ef9c09420f796aa179420c8fb916f5557defc9b']));
 const rawNotice = readFileSync(resolve(output, 'NOTICE.txt'), 'utf8');
 const runtimeGraph: Record<string, string> = JSON.parse(readFileSync(resolve(import.meta.dirname, '../dist/client/.vite/runtime-graph.json'), 'utf8'));
 for (const [id, root] of Object.entries(runtimeGraph)) {

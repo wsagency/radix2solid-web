@@ -14,7 +14,7 @@ Charts: the site's chart previews and demos bundle @wsagency/radix2solid-charts,
 
 Extra icons: the site also bundles @wsagency/radix2solid-icons-extra. Its two SVG assets were created for this package by an AI coding agent, as recorded in packages/icons-extra/README.md; they are not Radix Icons artwork. The package's MIT license, including the retained WorkOS notice for the reused component API shape, is reproduced verbatim below. This is not a trademark licence or a legal assurance about provenance.
 
-Other bundled code: the site's JavaScript also bundles the Radix2Solid Primitives, Icons and Themes packages, whose own licenses (including the WorkOS, Modulz and Radix MIT notices for the original code) are reproduced before the Charts license below. It also bundles Solid (solid-js, @solidjs/web and @solidjs/signals; Copyright (c) Ryan Carniato, MIT License), Floating UI (Copyright (c) 2021-present Floating UI contributors, MIT License), @radix-ui/colors, and the packages behind site search, color tools and in-browser code highlighting (MIT License, plus entities under the BSD-2-Clause License). Each package's own license is reproduced verbatim at the end of this file under its name and version. solid-js and @solidjs/web publish no LICENSE file, so their entries reproduce the solidjs/solid repository LICENSE at the commit tagged for that release.
+Other bundled code: the site's JavaScript also bundles the Radix2Solid Primitives, Icons and Themes packages, whose own licenses (including the WorkOS, Modulz and Radix MIT notices for the original code) are reproduced before the Charts license below. It also bundles Solid RC19 (solid-js, @solidjs/web and @solidjs/signals; Copyright (c) Ryan Carniato, MIT License), Floating UI (Copyright (c) 2021-present Floating UI contributors, MIT License), @radix-ui/colors, and the packages behind site search, color tools and in-browser code highlighting (MIT License, plus entities under the BSD-2-Clause License). Each package's own license is reproduced verbatim at the end of this file under its name and version. solid-js and @solidjs/web publish no LICENSE file, so their entries reproduce the solidjs/solid repository LICENSE at the Solid RC19 release gitHead d2323b077c7dda32ebced7843c2ce2b788a91e8d (SHA-256 59a76ed2f4a3ebe8d20a58869ef9c09420f796aa179420c8fb916f5557defc9b).
 
 MIT License
 
@@ -607,7 +607,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---- @solidjs/signals@2.0.0-rc.15 (MIT, @solidjs/signals/LICENSE) ---
+--- @solidjs/signals@2.0.0-rc.19 (MIT, @solidjs/signals/LICENSE) ---
 
 MIT License
 
@@ -631,7 +631,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
---- @solidjs/web@2.0.0-rc.15 (MIT, package ships no LICENSE file; solidjs/solid repository LICENSE at release commit 4937f0a2bfddd45a65738c189075aff577530073) ---
+--- @solidjs/web@2.0.0-rc.19 (MIT, package ships no LICENSE file; solidjs/solid repository LICENSE at RC19 gitHead d2323b077c7dda32ebced7843c2ce2b788a91e8d) ---
 
 MIT License
 
@@ -1485,7 +1485,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---- solid-js@2.0.0-rc.15 (MIT, package ships no LICENSE file; solidjs/solid repository LICENSE at release commit 4937f0a2bfddd45a65738c189075aff577530073) ---
+--- solid-js@2.0.0-rc.19 (MIT, package ships no LICENSE file; solidjs/solid repository LICENSE at RC19 gitHead d2323b077c7dda32ebced7843c2ce2b788a91e8d) ---
 
 MIT License
 

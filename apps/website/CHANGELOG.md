@@ -1,5 +1,14 @@
 # Changelog
 
+## Unpublished RC5 / Solid RC19 local source candidate
+
+- Pin the website's local package producers to source commit `e5305334109c406fa75bc13047c88fe5aae9c733` (manifest version `0.1.0-rc.5`) and configure the local Solid 2.0.0-rc.19 runtime/compiler tuple with `@solidjs/vite-plugin` 3.0.0-next.52. Solid RC19 requires Node `>=22.12.0`; Vite 8.3.3 supports `^20.19.0 || >=22.12.0`, while the repository's declared executable support range for its direct Node TypeScript commands is `>=22.18.0 <23 || >=24.0.0 <25`. Node 23.x is unsupported. The pinned developer runtime remains 24.21.0. This source SHA is local-only and not on the remote; GitHub Actions cannot bootstrap it until an authorized push. The site build, public package downloads and runnable sandbox contract do not imply publication: public downloads and all 119 registry-based sandboxes remain on library `0.1.0-rc.4` / Solid RC15.
+
+## Public RC4 package archives
+
+- Prepare all five published `0.1.0-rc.4` package tarballs from fixed npm registry URLs and SHA-512 integrities before website builds; cache the verified bytes in `.artifacts/public-rc4-tarballs`.
+- Generate direct package downloads and all 119 runnable sandboxes from those verified archives, not `.library` candidate packages. Preserve independent export identity/license checks and isolated consumer checks for the Solid RC15 tuple, registry lockfile integrities, no local vendor links, installed transitive Primitives identity, and Charts D3 NOTICE closure.
+
 ## Exact-version guidance
 
 - Keep install instructions, code samples, and runnable sandboxes pinned to exact `0.1.0-rc.4` package versions for reproducibility; npm dist-tags such as `latest` and `next` are mutable and may move independently.

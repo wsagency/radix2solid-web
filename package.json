@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.5.0",
-  "engines": { "node": ">=24 <25" },
+  "engines": { "node": ">=22.18.0 <23 || >=24.0.0 <25" },
   "scripts": {
     "build": "node scripts/prepare-library.ts && pnpm --filter @wsagency/radix2solid-primitives build && pnpm --filter @wsagency/radix2solid-icons build && pnpm --filter @wsagency/radix2solid-icons-extra build && pnpm --filter @wsagency/radix2solid-themes build && pnpm --filter @wsagency/radix2solid-charts build && pnpm --filter @radix-solid/website build",
     "typecheck": "tsc --noEmit",
@@ -19,11 +19,11 @@
     "@wsagency/radix2solid-primitives": "workspace:*",
     "@wsagency/radix2solid-themes": "workspace:*",
     "@radix-ui/colors": "3.0.0",
-    "@solidjs/vite-plugin": "3.0.0-next.50",
-    "@solidjs/web": "2.0.0-rc.15",
+    "@solidjs/vite-plugin": "3.0.0-next.52",
+    "@solidjs/web": "2.0.0-rc.19",
     "@types/node": "24.19.1",
     "axe-core": "4.11.0",
-    "solid-js": "2.0.0-rc.15",
+    "solid-js": "2.0.0-rc.19",
     "typescript": "7.0.2",
     "typescript5": "npm:typescript@5.9.3",
     "vite": "8.3.3"

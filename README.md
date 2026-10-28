@@ -63,35 +63,39 @@ Repository owners can invite collaborators through repository Settings to grant 
 
 ## Build and check
 
-Use Node **24.21.0** and pnpm **11.5.0**, matching `.node-version` and `packageManager`.
+Use Node **24.21.0** and pnpm **11.5.0**, matching `.node-version` and `packageManager`. The web repository's declared executable support range is Node `>=22.18.0 <23 || >=24.0.0 <25`; Node 23.x is not supported.
 
 ```sh
+export RADIX2SOLID_LIBRARY_SOURCE=/absolute/path/to/radix2solid
 node scripts/prepare-library.ts
 pnpm install --frozen-lockfile
+pnpm --filter @radix-solid/website prepare:public-archives
 pnpm exec playwright install chromium firefox webkit
 pnpm check
 pnpm dev
 ```
 
-The dependency-free Node bootstrap reads the fixed public repository and full commit from `library-source.json`, then prepares ignored `.library/` before installation. Run it directly, before any pnpm command: pnpm can automatically install workspace dependencies before running a package script. That exact library commit must be published for the default HTTPS fetch to succeed. It does not fall back to a branch, npm or copied source. An existing checkout must have the pinned HEAD and no staged, unstaged or nonignored untracked changes; wrong HEAD, dirt, symlinks, non-Git directories and invalid/replaced pins fail without resetting or overwriting existing data. Ignored `dist/` and `node_modules/` outputs are allowed.
+The dependency-free Node bootstrap reads the fixed public repository and full commit from `library-source.json`, then prepares ignored `.library/` before installation. Run it directly, before any pnpm command: pnpm can automatically install workspace dependencies before running a package script. The default HTTPS fetch requires that exact commit to exist on the public repository. This candidate SHA is local-only and has not been pushed, so GitHub Actions cannot bootstrap it until an authorized push. For local validation only, set `RADIX2SOLID_LIBRARY_SOURCE` to an absolute path to a local Git repository containing the pinned commit. Without that explicit override, a wrong HEAD, dirt, symlinks, non-Git directories and invalid/replaced pins fail without resetting or overwriting existing data. With it, a clean existing `.library` may fetch the exact pin from the explicit local source; dirty or unsafe checkouts remain unchanged. Ignored `dist/` and `node_modules/` outputs are allowed.
 
-Install **once at this web root**, not inside `.library`. The workspace contains `apps/website` and the five actual `.library/packages/*` producers. Build validates the checkout again, then builds real primitives → icons → icons-extra → themes → charts distributions before the site. There are no library source aliases, React bridge, Solid 1 runtime or second library-root dependency installation. The web lock retains the accepted producer dependency resolutions and exact Solid 2.0.0-rc.15 overrides (`solid-js`, `@solidjs/web`, `@solidjs/signals`, `@solidjs/compiler`, `@solidjs/babel-plugin`) with `@solidjs/vite-plugin` 3.0.0-next.50. The global 24-hour `minimumReleaseAge` stays; only those exact versions are excepted until they age.
+Install **once at this web root**, not inside `.library`. The workspace contains `apps/website` and the five actual `.library/packages/*` producers. Build validates the checkout again, then builds real primitives → icons → icons-extra → themes → charts distributions before the site. There are no library source aliases, React bridge, Solid 1 runtime or second library-root dependency installation. The site build uses the unpublished local `0.1.0-rc.5` source candidate at `e5305334109c406fa75bc13047c88fe5aae9c733` with the Solid 2.0.0-rc.19 runtime/compiler tuple and `@solidjs/vite-plugin` 3.0.0-next.52. This is local candidate validation only, not package publication or a website release. Public package downloads and the 119 registry-based runnable sandboxes remain published library `0.1.0-rc.4` / Solid RC15. The global 24-hour `minimumReleaseAge` stays; exceptions are exact-version-only for the RC19 compiler tuple/plugin and retained test-runner packages.
 
-### Explicit local sibling prepopulation
+### Explicit local sibling source override
 
-If the pinned source has not been published yet, a real local sibling clone is an explicit alternative:
+For a local source commit not yet available from the fixed public repository, set the explicit developer-only override to the local source Git repository. The existing `.library` must be clean; the bootstrap fetches the exact pinned commit into that checkout without discarding uncommitted data:
 
 ```sh
-git clone --no-hardlinks ../radix2solid .library
-git -C .library checkout --detach 4ff4954be95bab5db9004f9a09c744f780f38929
+export RADIX2SOLID_LIBRARY_SOURCE=/absolute/path/to/radix2solid
 node scripts/prepare-library.ts
 pnpm install --frozen-lockfile
-pnpm check
+pnpm --filter @radix-solid/website prepare:public-archives
+pnpm build
+pnpm --filter @radix-solid/website check:export
+pnpm --filter @radix-solid/website check:snippets
 ```
 
-This assumes `../radix2solid` is the actual source repository containing that commit. It is **local-source validation, not proof of a remote-only GitHub checkout**. Bootstrap itself is unchanged and has no transport flags.
+The source path must be the top level of a real local Git repository containing the pinned commit. This override is **local-source validation, not proof of remote availability**; the local candidate commit `e5305334109c406fa75bc13047c88fe5aae9c733` is not on the remote, so GitHub Actions remains unable to bootstrap until authorized push. Never change the CI source override or publish from this local-only validation.
 
-To update the library, review an actual clean library commit, update `library-source.json` with its full SHA, check the owned `.library` checkout is clean, and explicitly fetch/check out the new commit detached. Bootstrap deliberately rejects the old checkout after a pin change; it never silently recovers it. Retain the accepted root lock resolutions when updating workspace importers, then repeat the real producer/site checks.
+To update the library, review an actual clean library commit, update `library-source.json` with its full SHA, and verify the owned `.library` checkout has no staged, unstaged or nonignored untracked changes before running the bootstrap with the explicit local source. The bootstrap rejects a dirty or unsafe checkout unchanged; without the local override it also rejects a mismatched old HEAD. Retain accepted root lock resolutions when updating workspace importers, then repeat the real producer/site checks.
 
 ## Verification scope
 

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build && vite build --ssr && node scripts/build-site.ts && node scripts/build-markdown.ts && node scripts/build-search-index.ts && node scripts/build-sandboxes.ts",
     "check:export": "node scripts/check-export.ts",
+    "prepare:public-archives": "node scripts/prepare-public-rc4-archives.ts",
     "check:examples": "node scripts/check-examples.ts",
     "check:snippets": "node scripts/check-snippets.ts",
     "check:sandboxes": "node scripts/check-sandboxes.ts",
@@ -20,7 +21,7 @@
     "@wsagency/radix2solid-primitives": "workspace:*",
     "@wsagency/radix2solid-themes": "workspace:*",
     "@radix-ui/colors": "3.0.0",
-    "@solidjs/web": "2.0.0-rc.15",
+    "@solidjs/web": "2.0.0-rc.19",
     "bezier-easing": "2.1.0",
     "colorjs.io": "0.5.2",
     "github-slugger": "2.0.0",
@@ -37,11 +38,11 @@
     "remark-mdx": "3.1.1",
     "remark-parse": "11.0.0",
     "remark-stringify": "11.0.0",
-    "solid-js": "2.0.0-rc.15",
+    "solid-js": "2.0.0-rc.19",
     "unified": "11.0.5"
   },
   "devDependencies": {
-    "@solidjs/vite-plugin": "3.0.0-next.50",
+    "@solidjs/vite-plugin": "3.0.0-next.52",
     "@types/hast": "3.0.5",
     "@types/refractor": "3.4.1",
     "@vanilla-extract/css": "1.21.3",

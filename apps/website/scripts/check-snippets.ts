@@ -8,6 +8,7 @@ import remarkParse from 'remark-parse';
 import remarkMdx from 'remark-mdx';
 import matter from 'gray-matter';
 import { highlightCode } from '../src/utils/highlight-code.ts';
+import { publicArchiveFileName, publicArchivePins } from './public-rc4-archives.ts';
 
 // Partial documentation fences inherit only real page imports and MDX components.
 // Named neighbouring files are materialized from their actual documented source.
@@ -19,8 +20,16 @@ const cache = resolve(site, 'node_modules/.cache');
 await mkdir(cache, { recursive: true });
 const fixture = await mkdtemp(resolve(cache, 'native-doc-snippets-'));
 try {
-  const nativePackages: { name: string; version: string; private: boolean; peerDependencies?: Record<string, string> }[] = await Promise.all(['primitives', 'themes', 'icons', 'charts', 'icons-extra'].map(async name => JSON.parse(await readFile(resolve(root, `.library/packages/${name}/package.json`), 'utf8'))));
   const colors: { name: string; version: string; private?: boolean } = JSON.parse(await readFile(resolve(site, 'node_modules/@radix-ui/colors/package.json'), 'utf8'));
+  const publicPeerVersions: Record<string, string> = {
+    'solid-js': '2.0.0-rc.15',
+    '@solidjs/web': '2.0.0-rc.15',
+    '@solidjs/signals': '2.0.0-rc.15',
+    '@solidjs/compiler': '2.0.0-rc.15',
+    '@solidjs/babel-plugin': '2.0.0-rc.15',
+    '@solidjs/vite-plugin': '3.0.0-next.50',
+    postcss: '^8.5.9',
+  };
   let highlightedFences = 0, installationCommands = 0;
   const config = ts.readConfigFile(resolve(root, 'tsconfig.json'), ts.sys.readFile);
   assert.equal(config.error, undefined);
@@ -54,23 +63,21 @@ try {
       installationCommands++;
       for (const argument of command[1].trim().split(/\s+/).filter(argument => !/^-[a-zA-Z]$/.test(argument))) {
         if (argument.endsWith('.tgz')) {
-          const metadata = nativePackages.find(pkg => basename(argument) === `${pkg.name.replace(/^@/, '').replace('/', '-')}-${pkg.version}.tgz`);
-          assert(metadata, `${path}: installation tarball must match an actual native package name and version: ${argument}`);
+          const pin = publicArchivePins.find(candidate => basename(argument) === publicArchiveFileName(candidate));
+          assert(pin, `${path}: installation tarball must match an actual published RC4 package name and version: ${argument}`);
           assert(argument.startsWith('./'), `${path}: copied tarball commands require an explicit local path`);
           continue;
         }
         const packageArgument = /^(@[^/]+\/[^@]+|[^@]+)(?:@(.+))?$/.exec(argument);
         assert(packageArgument, `${path}: malformed package argument ${argument}`);
-        const native = nativePackages.find(pkg => pkg.name === packageArgument[1]);
-        assert(!native?.private, `${path}: private native packages must be installed from their packed tarballs, not the registry`);
-        if (native) {
-          assert.equal(packageArgument[2], native.version, `${path}: native registry installation must pin the actual package version`);
+        const published = publicArchivePins.find(pkg => pkg.name === packageArgument[1]);
+        if (published) {
+          assert.equal(packageArgument[2], published.version, `${path}: native registry installation must pin the published RC4 package version`);
           continue;
         }
-        // Optional peers are installed by name with the exact range a native package declares.
-        const peer = nativePackages.find(pkg => pkg.peerDependencies?.[packageArgument[1]]);
-        if (peer && packageArgument[1] !== 'solid-js' && !packageArgument[1].startsWith('@solidjs/')) {
-          assert.equal(packageArgument[2], peer.peerDependencies![packageArgument[1]], `${path}: ${packageArgument[1]} must use the ${peer.name} peer range`);
+        const peerVersion = publicPeerVersions[packageArgument[1]];
+        if (peerVersion) {
+          assert.equal(packageArgument[2], peerVersion, `${path}: ${packageArgument[1]} must use the exact public RC15 consumer version`);
           continue;
         }
         assert.equal(packageArgument[1], colors.name, `${path}: registry installation must name the actual published colors package`);
