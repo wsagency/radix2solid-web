@@ -2,7 +2,7 @@
 
 ## Unpublished RC5 / Solid RC19 local source candidate
 
-- Pin the website's local package producers to source commit `e5305334109c406fa75bc13047c88fe5aae9c733` (manifest version `0.1.0-rc.5`) and configure the local Solid 2.0.0-rc.19 runtime/compiler tuple with `@solidjs/vite-plugin` 3.0.0-next.52. Solid RC19 requires Node `>=22.12.0`; Vite 8.3.3 supports `^20.19.0 || >=22.12.0`, while the repository's declared executable support range for its direct Node TypeScript commands is `>=22.18.0 <23 || >=24.0.0 <25`. Node 23.x is unsupported. The pinned developer runtime remains 24.21.0. This source SHA is local-only and not on the remote; GitHub Actions cannot bootstrap it until an authorized push. The site build, public package downloads and runnable sandbox contract do not imply publication: public downloads and all 119 registry-based sandboxes remain on library `0.1.0-rc.4` / Solid RC15.
+- Pin the website's local package producers to source commit `2f8a329afe95c14dbd49810b90744f95a36b775e` (parent `6395e0dc96f0a912f2a616712e25f289717285aa`, manifest version `0.1.0-rc.5`) and configure the local Solid 2.0.0-rc.19 runtime/compiler tuple with `@solidjs/vite-plugin` 3.0.0-next.52. This local source includes the Checkbox security fix; published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains vulnerable and does not contain it. Its Charts documentation narrows the Solid RC19 reactive-object `data-*` limitation and recommends reactive string/primitive values without changing renderer behavior. The source SHA is local-only and not on the remote, so GitHub Actions cannot bootstrap it until an authorized push. Public package downloads and all 119 registry-based sandboxes remain on library `0.1.0-rc.4` / Solid RC15.
 
 ## Public RC4 package archives
 

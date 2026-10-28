@@ -44,6 +44,22 @@ export default () => <Checkbox.Root>
 
 ### Root
 
+> **Release status:** This local website build uses unpublished source commit `2f8a329afe95c14dbd49810b90744f95a36b775e` (including the Checkbox native required-validation fix from `6395e0dc96f0a912f2a616712e25f289717285aa`). Published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains affected by this required-form-validation issue; no fixed package has been published. The preview below shows a checked control and label inside a form, but it does not demonstrate native form submission or required validation.
+
+For a safety-critical confirmation that depends on the browser blocking submission while a required checkbox is unchecked, avoid the published RC4 Checkbox for that path until a fixed package is published. Use a native input instead:
+
+```html
+<form method="post">
+  <label>
+    <input type="checkbox" required name="confirmDeletion" value="yes" />
+    I confirm deletion of this item.
+  </label>
+  <button type="submit">Delete</button>
+</form>
+```
+
+Native `required` is browser-side validation only and can be bypassed. The server must independently authorize the request and verify the confirmation before performing a destructive action; a checkbox alone does not secure deletion.
+
 Contains all the parts of a checkbox. An `input` will also render when used within a `form` to ensure events propagate correctly.
 
 <PropsTable

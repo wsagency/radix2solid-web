@@ -42,6 +42,11 @@ export default () => <BarChart width={400} height={240} data={[{ name: "A", uv: 
 </BarChart>;
 ```
 
+### Local Solid RC19 candidate limitation
+
+In the unpublished local candidate, passing a reactive proxy object from a chart row directly as a `data-*` value to a default SVG shape can make native `Element.setAttribute` coercion emit `STRICT_READ_UNTRACKED`. Because coercion runs in untracked apply, reactive reads used by the object's conversion (for example, a `toString` that reads a signal) do not subscribe the DOM update, so the attribute can remain stale after the source changes. This is narrowly scoped to reactive object-valued DOM `data-*`; raw chart data and custom shape callback objects are unaffected. Derive and pass a string or primitive reactively before the chart boundary, keeping the initial SSR and CSR strings aligned for hydration; keep object-valued custom payloads under ordinary non-`data-*` props. This limitation is for the unpublished local Solid RC19 candidate only, not the public RC4 / Solid RC15 archive contract, and it does not imply a renderer fix.
+
+
 ## Selected next-suite APIs
 
 - `Legend` accepts `position?: CartesianPosition` and `offset?: number` (default `0`). Position overrides `align`/`verticalAlign`; its default `layout="auto"` is vertical for left/right and inside-left/right, horizontal otherwise. Only the position-set default-mount path adds wrapper-owned server legend HTML, preserving a zero measured box in first-client styles before browser measurement. No-position and explicit custom-portal legends retain the existing DOM-only path. Inside legends reserve no plot space. See [LineChart](/charts/docs/components/line-chart).
