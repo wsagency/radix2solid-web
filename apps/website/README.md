@@ -7,7 +7,6 @@ The exact inventory is owned by [`coverage-manifest.json`](coverage-manifest.jso
 ## Commands from the web root
 
 ```sh
-export RADIX2SOLID_LIBRARY_SOURCE=/absolute/path/to/radix2solid
 node scripts/prepare-library.ts
 pnpm install --frozen-lockfile
 pnpm --filter @radix-solid/website prepare:public-archives
@@ -23,7 +22,7 @@ node apps/website/scripts/check-dev.mjs
 pnpm dev
 ```
 
-The website build consumes the unpublished local library candidate `0.1.0-rc.5` at source commit `2f8a329afe95c14dbd49810b90744f95a36b775e` (parent `6395e0dc96f0a912f2a616712e25f289717285aa`) with the Solid 2.0.0-rc.19 runtime/compiler tuple and `@solidjs/vite-plugin` 3.0.0-next.52. This local source includes the Checkbox security fix; published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains vulnerable and does not contain it. Its Charts documentation records the narrow Solid RC19 reactive-proxy `data-*` limitation and consumer string guidance; no renderer behavior changed. The candidate SHA is not on the remote, so GitHub Actions cannot bootstrap it until an authorized push. This is local-only validation, not package publication or a website release. Public package downloads and all 119 registry-based runnable sandboxes remain on published library `0.1.0-rc.4` with the Solid RC15 tuple. The pinned developer runtime remains Node 24.21.0.
+The website build consumes the unpublished npm package candidate `0.1.0-rc.5` from source commit `2f8a329afe95c14dbd49810b90744f95a36b775e` (parent `6395e0dc96f0a912f2a616712e25f289717285aa`), publicly available on the library's `upgrade/solid-2-rc19` branch. The default HTTPS bootstrap can fetch this pinned source without `RADIX2SOLID_LIBRARY_SOURCE`; this does not publish the candidate or deploy the website. This source includes the Checkbox security fix; published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains vulnerable and does not contain it, and no fixed Primitives package has been published. Its Charts documentation records the narrow Solid RC19 reactive-proxy `data-*` limitation and consumer string guidance; no renderer behavior changed. Public package downloads and all 119 registry-based runnable sandboxes remain on published library `0.1.0-rc.4` with the Solid RC15 tuple. The pinned developer runtime remains Node 24.21.0.
 
 Preview is `http://127.0.0.1:4149/`; stop a manual preview before Playwright starts its own, or set `WEBSITE_PREVIEW_PORT` (for example `WEBSITE_PREVIEW_PORT=4150 pnpm exec playwright test`) so the preview server, Playwright `baseURL`/readiness URL and `e2e/website.spec.ts` all use that port instead. Website browser checks retain Chromium, Firefox and WebKit, with no library gallery server.
 
