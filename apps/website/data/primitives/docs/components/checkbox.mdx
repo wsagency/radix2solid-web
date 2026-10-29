@@ -44,7 +44,7 @@ export default () => <Checkbox.Root>
 
 ### Root
 
-> **Release status:** This local website build uses unpublished source commit `2f8a329afe95c14dbd49810b90744f95a36b775e` (including the Checkbox native required-validation fix from `6395e0dc96f0a912f2a616712e25f289717285aa`). Published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains affected by this required-form-validation issue; no fixed package has been published. The preview below shows a checked control and label inside a form, but it does not demonstrate native form submission or required validation.
+> **Release status:** This local website build uses unpublished library source commit `15437ddabb7eb5b0f4776d19bae0495b45ac71f3` (parent `2f8a329afe95c14dbd49810b90744f95a36b775e`), which includes the Checkbox native required-validation fix from `6395e0dc96f0a912f2a616712e25f289717285aa`. Published npm `@wsagency/radix2solid-primitives@0.1.0-rc.4` remains affected by this required-form-validation issue; no fixed package has been published. The preview below shows a checked control and label inside a form, but it does not demonstrate native form submission or required validation.
 
 For a safety-critical confirmation that depends on the browser blocking submission while a required checkbox is unchecked, avoid the published RC4 Checkbox for that path until a fixed package is published. Use a native input instead:
 
